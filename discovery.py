@@ -6,6 +6,11 @@ from pm4py.statistics.end_activities.log import get as end_activities
 from pm4py.visualization.dfg import visualizer as dfg_visualization
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from scipy import stats
+import statsmodels.api as sm
+from itertools import groupby
+import gamma_distribution
+import numpy as np
 
 def extract_times():
     for trace in log:
@@ -29,52 +34,48 @@ def extract_times_with_future():
         for next_event in trace:
             if not first:
                 time = next_event['time:timestamp'] - event['time:timestamp']
-                if not event['concept:name'] + '_' + next_event['concept:name'] in times_dictionary.keys():
-                    times_dictionary[event['concept:name'] + '_' + next_event['concept:name']] = [time.total_seconds()//3600]
+                if not event['concept:name'] + '+' + next_event['concept:name'] in times_dictionary.keys():
+                    times_dictionary[event['concept:name'] + '+' + next_event['concept:name']] = [time.total_seconds()//3600]
                 else:
-                    times_dictionary[event['concept:name'] + '_' + next_event['concept:name']].append(time.total_seconds()//3600)
+                    times_dictionary[event['concept:name'] + '+' + next_event['concept:name']].append(time.total_seconds()//3600)
             event = next_event
             first = False
+# retrieve distribution of values from given y
+def retrieve_distribution(y):
+    result = {}
+    print('Times:')
+    print(y)
+    for i in y:
+        count_i = y.count(i)
+        result[i] = count_i
+    gamma_distribution.fit_gamma(result)
+    return result
+
 
 variant = xes_importer.Variants.ITERPARSE
 parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
-log = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/bpi_challenge_2013_incidents.xes', 
+log = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/logs/DomesticDeclarations.xes', 
     variant=variant, parameters=parameters)
 times_dictionary = {}
 
-extract_times()
+extract_times_with_future()
 
-#fig = plt.figure(figsize=(10,300))
-#i = 1
-#for key in sorted(times_dictionary.keys()):
-    #h = fig.add_subplot(len(times_dictionary), 1, i)
-    #print(h)
-    #h.hist(times_dictionary.get(key), bins=1000, facecolor='g')
-    #h.title.set_text(key)
-    #h.set_xlabel('Number of hours')
-    #i += 1
-plt.hist(times_dictionary.get("Completed"), bins=100, facecolor='g')
-plt.xlabel("Waiting time in hours")
-plt.ylabel("Number of occurancies")
-plt.show()
-plt.savefig('completed.eps')
-
-#h.show()
-
-#sa = start_activities.get_start_activities(log)
-#ea = end_activities.get_end_activities(log)
-#print(sa)
-#print(ea)
-
-
-#dfg = dfg_discovery.apply(log, variant=dfg_discovery.Variants.FREQUENCY)
-
-#for start in sa:
-#    for end in ea:
-#        dfg[end, start] += sa[start]
-
-#dfg_exporter.apply(dfg, '/Users/a1230101//Documents/GitHub/MCDiscovery/output.dfg', parameters={dfg_exporter.Variants.CLASSIC.value.Parameters.START_ACTIVITIES: sa,
-#                                   dfg_exporter.Variants.CLASSIC.value.Parameters.END_ACTIVITIES: ea})
-
-#gviz = dfg_visualization.apply(dfg, log=log, variant=dfg_visualization.Variants.FREQUENCY)
-#dfg_visualization.view(gviz)
+fig = plt.figure(figsize=(10,220))
+i = 1
+for key in sorted(times_dictionary.keys()):
+    #dist = retrieve_distribution(times_dictionary.get(key))
+    h = fig.add_subplot(len(times_dictionary), 1, i)
+    y, x, _ = h.hist(times_dictionary.get(key), bins=1000, facecolor='g', density = True,)
+    h.set_ylim(0, min(max(y),1))
+    h.title.set_text(key)
+    h.set_xlabel('Waiting time in hours')
+    h.set_ylabel("Number of occurancies")
+    kde = sm.nonparametric.KDEUnivariate(times_dictionary.get(key))
+    kde.fit(bw=4, kernel='gau')  # Estimate the densities 
+    print(kde.cdf)
+    #print(len(kde.density))
+    #print(len(kde.support))
+    h.plot(kde.support, kde.density, label="KDE")
+   
+    i += 1
+plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
