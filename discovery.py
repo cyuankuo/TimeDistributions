@@ -11,6 +11,9 @@ import statsmodels.api as sm
 from itertools import groupby
 import gamma_distribution
 import numpy as np
+import seaborn as sns
+from fit_distribution import fit_gauss
+import collections
 
 def extract_times():
     for trace in log:
@@ -43,14 +46,12 @@ def extract_times_with_future():
 # retrieve distribution of values from given y
 def retrieve_distribution(y):
     result = {}
-    print('Times:')
-    print(y)
     for i in y:
         count_i = y.count(i)
         result[i] = count_i
-    gamma_distribution.fit_gamma(result)
+        result[i] /= len(y)
+    #gamma_distribution.fit_gamma(result)
     return result
-
 
 variant = xes_importer.Variants.ITERPARSE
 parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
@@ -59,6 +60,10 @@ log = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/lo
 times_dictionary = {}
 
 extract_times_with_future()
+
+"""
+Fitting using Gaussian KDE
+"""
 
 fig = plt.figure(figsize=(10,220))
 i = 1
@@ -71,11 +76,43 @@ for key in sorted(times_dictionary.keys()):
     h.set_xlabel('Waiting time in hours')
     h.set_ylabel("Number of occurancies")
     kde = sm.nonparametric.KDEUnivariate(times_dictionary.get(key))
-    kde.fit(bw=4, kernel='gau')  # Estimate the densities 
-    print(kde.cdf)
+    kde.fit(bw=4, kernel='gau')  # Estimate the densities
+    #print(kde.cdf)
     #print(len(kde.density))
     #print(len(kde.support))
-    h.plot(kde.support, kde.density, label="KDE")
-   
+    #h.plot(kde.support, kde.density, label="KDE")
+    fit_gauss(kde.support, kde.density)
+    #y = retrieve_distribution(times_dictionary.get(key))
+    #print(y)
+    #od = collections.OrderedDict(sorted(y.items()))
+    #fit_gauss(list(od.keys()), list(od.values()))
+    
+    #print(od.values())
+    #fit_gauss(od.keys(), od.values())
+      
     i += 1
 plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
+
+"""
+Fitting without KDE
+"""
+"""
+fig = plt.figure(figsize=(10,220))
+i = 1
+for key in sorted(times_dictionary.keys()):
+    times = times_dictionary.get(key)
+    h = fig.add_subplot(len(times_dictionary), 1, i)
+    y_hist, x_hist, _ = h.hist(times, bins=1000, facecolor='g', density = True,)
+    h.set_ylim(0, min(max(y_hist),1))
+    h.title.set_text(key)
+    h.set_xlabel('Waiting time in hours')
+    h.set_ylabel("Number of occurancies")
+    dict_of_times = retrieve_distribution(times)
+    odered_times = collections.OrderedDict(sorted(dict_of_times.items()))
+    fit_gauss(x_hist[1:], y_hist)
+
+    #h.plot(kde.support, kde.density, label="KDE")
+      
+    i += 1
+#plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarationsFit.pdf')
+"""

@@ -14,6 +14,16 @@ from scipy import stats
 
 y_raw = []
 
+"""
+Build a vector of functio values
+"""
+def Gamma_Variate_Function_Vector(t, tmax, ymax, alpha, AT):
+    f = []
+    for i in range(len(t)):
+        f.append(Gamma_Variate_Function_Madsen(t[i], tmax, ymax, alpha, AT))
+    return f
+
+
 def Gamma_Variate_Function_Madsen(t, tmax, ymax, alpha, AT):
 
     """
@@ -45,7 +55,38 @@ def Gamma_Variate_Function_Madsen(t, tmax, ymax, alpha, AT):
 
     return f
 
+def Multiple_Gamma_Variate_Function_Madsen(t, params):
 
+    """
+    Madsen, M. T., “A simplified formulation of the gamma variate function,
+    ”Physics in Medicine and Biol-ogy37(7), 1597–1600 (1992).    
+
+    t: time value
+    tmax: time of the peak
+    ymax: peak intensity (absolute value)
+    alpha: shape parameter
+    AT: appearance time --> should be lower that tmax
+
+    """
+
+    f = 0
+
+    for i in range(int(len(params)/4)):
+        tmax = params[i*4] 
+        ymax = params[i*4 + 1]
+        alpha = params[i*4 + 2]
+        AT = params[i*4 + 3]
+
+        if t <= AT:
+            f += 0
+        elif tmax <= AT:
+            f += 0
+        else:
+            #t should always be positive
+            t2 = abs((t - AT) / (tmax - AT))
+            #print(t)
+            f += ymax  * pow(t2, alpha) * exp(alpha * (1 - t2))
+    return f
 def Multiple_Gamma_Variate_Function_Madsen(t, params):
 
     """
@@ -333,11 +374,13 @@ if __name__ == '__main__':
     # Generate a multi - Gamma variate curve
     x_raw = range(1000)
 
-    params = [100, 450, 0.9, -100, 250, 300, 1.2, 100, 600, 300, 2, 400]
-    y_raw = [Multiple_Gamma_Variate_Function_Madsen(x, params) + \
-             float(np.random.normal(0,2,1)) for x in x_raw]
+    #params = [100, 450, 0.9, -100, 250, 300, 1.2, 100, 600, 300, 2, 400]
+
+    # y_raw = [Multiple_Gamma_Variate_Function_Madsen(x, params) + \
+    #            float(np.random.normal(0,2,1)) for x in x_raw]
+    #y_raw = [Multiple_Gamma_Variate_Function_Madsen(x, params)  for x in x_raw]
     #y_raw = [Multiple_Gamma_Variate_Function_Madsen(x, params) for x in x_raw]
-    #y_raw = [21.0, 0.0, 1.0, 0.0, 1.0, 1.0, 19.0, 173.0, 14.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 7.0, 87.0, 0.0, 4.0, 1.0, 0.0, 2.0, 2.0, 13.0, 19.0, 0.0, 0.0, 8.0, 20.0, 44.0, 0.0, 42.0, 69.0, 12.0, 9.0, 1.0, 60.0, 113.0, 168.0, 17.0, 0.0, 69.0, 20.0, 267.0, 100.0, 0.0, 52.0, 22.0, 44.0, 23.0, 65.0, 26.0, 21.0, 1.0, 77.0, 64.0, 2.0], 'Declaration REJECTED by BUDGET OWNER+Declaration REJECTED by EMPLOYEE': [5.0, 16.0, 16.0, 16.0, 16.0, 2.0, 100.0, 23.0, 20.0, 114.0, 118.0, 118.0, 118.0, 118.0, 118.0, 118.0, 118.0, 45.0, 27.0, 1.0, 20.0, 59.0, 50.0, 23.0, 46.0, 0.0, 1.0, 1.0, 64.0, 74.0, 22.0, 4.0, 22.0, 23.0, 95.0, 28.0, 125.0, 3.0, 26.0, 39.0, 142.0, 3.0, 116.0, 126.0, 18.0, 44.0, 24.0, 13.0, 24.0, 11.0, 152.0, 15.0, 146.0, 100.0, 20.0, 20.0, 4.0, 19.0]
+    y_raw = [float(np.random.normal(10,2,1)) for x in x_raw]
     #Show the raw curve
     print('raw signal:')
     plt.plot(y_raw) #.fig_title = 'Raw noisy data'
