@@ -65,16 +65,18 @@ extract_times_with_future()
 Fitting using Gaussian KDE
 """
 
-fig = plt.figure(figsize=(10,220))
+#fig = plt.figure(figsize=(10,220))
 i = 1
 for key in sorted(times_dictionary.keys()):
+    print('Activity:')
+    print(key)
     #dist = retrieve_distribution(times_dictionary.get(key))
-    h = fig.add_subplot(len(times_dictionary), 1, i)
-    y, x, _ = h.hist(times_dictionary.get(key), bins=1000, facecolor='g', density = True,)
-    h.set_ylim(0, min(max(y),1))
-    h.title.set_text(key)
-    h.set_xlabel('Waiting time in hours')
-    h.set_ylabel("Number of occurancies")
+    #h = fig.add_subplot(len(times_dictionary), 1, i)
+    #y, x, _ = h.hist(times_dictionary.get(key), bins=1000, facecolor='g', density = True,)
+    #h.set_ylim(0, min(max(y),1))
+    #h.title.set_text(key)
+    #h.set_xlabel('Waiting time in hours')
+    #h.set_ylabel("Number of occurancies")
     kde = sm.nonparametric.KDEUnivariate(times_dictionary.get(key))
     kde.fit(bw=4, kernel='gau')  # Estimate the densities
     #print(kde.cdf)
@@ -91,7 +93,8 @@ for key in sorted(times_dictionary.keys()):
     #fit_gauss(od.keys(), od.values())
       
     i += 1
-plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
+
+#plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
 
 """
 Fitting without KDE
