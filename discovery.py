@@ -12,7 +12,7 @@ from itertools import groupby
 import gamma_distribution
 import numpy as np
 import seaborn as sns
-from fit_distribution import fit_gauss
+from fit_distribution import fit_gauss, find_peaks_lib
 import collections
 
 def extract_times():
@@ -68,6 +68,9 @@ Fitting using Gaussian KDE
 #fig = plt.figure(figsize=(10,220))
 i = 1
 for key in sorted(times_dictionary.keys()):
+  #  if i<9:
+  #      i += 1
+  #      continue
     print('Activity:')
     print(key)
     #dist = retrieve_distribution(times_dictionary.get(key))
@@ -79,11 +82,15 @@ for key in sorted(times_dictionary.keys()):
     #h.set_ylabel("Number of occurancies")
     kde = sm.nonparametric.KDEUnivariate(times_dictionary.get(key))
     kde.fit(bw=4, kernel='gau')  # Estimate the densities
+   
+
     #print(kde.cdf)
     #print(len(kde.density))
     #print(len(kde.support))
     #h.plot(kde.support, kde.density, label="KDE")
     fit_gauss(kde.support, kde.density)
+   
+
     #y = retrieve_distribution(times_dictionary.get(key))
     #print(y)
     #od = collections.OrderedDict(sorted(y.items()))
