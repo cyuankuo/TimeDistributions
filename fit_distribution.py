@@ -1,5 +1,5 @@
 """
-TODO: 1) Replace by means in the bad case, 2) Normalise and Truncate Gauss, 3) Reduction, 4) Final experimant with resulting plots
+TODO:  2) Truncate Gauss, 3) Reduction, 4) Final experimant with resulting plots
 """
 from scipy.optimize import curve_fit
 import numpy as np
