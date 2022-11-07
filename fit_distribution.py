@@ -1,5 +1,5 @@
 """
-TODO:  2) Truncate Gauss, 3) Reduction, 4) Final experimant with resulting plots
+TODO:  2) Apply norm/trunc to real data, 3) Reduction, 4) Final experimant with resulting plots
 """
 from scipy.optimize import curve_fit
 import numpy as np
