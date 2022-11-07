@@ -1,5 +1,5 @@
 """
-TODO:  2) Apply norm/trunc to real data, 3) Reduction, 4) Final experimant with resulting plots
+TODO:  1) Check derived probabilities, 2) Reduction, 3) Final experimant with resulting plots
 """
 from scipy.optimize import curve_fit
 import numpy as np
@@ -40,6 +40,20 @@ def gauss_func(x, *params):
         wid = params[i+2]
         y = y + amp * np.exp(-((x - ctr)/wid)**2)
     return y
+
+def build_multi_gauss_from_params(*params):
+    m = MultiGauss([], [])
+    for i in range(0, len(params), 3):
+        ctr = params[i]
+        amp = params[i+1]
+        wid = params[i+2]
+        mean = ctr
+        deviation = wid / math.sqrt(2) 
+        g = Gauss(mean=mean, deviation=deviation)
+        p = amp * wid * math.sqrt(math.pi)
+        m.probabilities.append(p)
+        m.gaussians.append(g)
+    return m
 
 def find_peaks_custom(x,y,max_number):
     peaks = []
@@ -97,6 +111,7 @@ def fit_gauss(x,y):
         for i in range(len(x)):
             mean += x[i] * y[i]
         fit = gauss_func(x, *(mean, 1/math.sqrt(2*math.pi), math.sqrt(2)))
+        m = build_multi_gauss_from_params([1.0], [Gauss(mean, 1)])
     else:
         print('peaks:')
         print(peaks)
@@ -108,6 +123,8 @@ def fit_gauss(x,y):
         print('parameters:')
         print(popt)
         fit = gauss_func(x, *popt)
+        m = build_multi_gauss_from_params(*popt)
+        # Avoiding flat fitting curves
         while max(fit) < 0.001:
             min_height *= 2
             peaks = find_peaks_lib(x,y,min_height=min_height,width=None)
@@ -119,8 +136,14 @@ def fit_gauss(x,y):
             print('parameters:')
             print(popt)
             fit = gauss_func(x, *popt)
-    plt.plot(x, y)
-    plt.plot(x, fit , 'r-')
+            m = build_multi_gauss_from_params(*popt)
+    #plt.plot(x, y)
+    #plt.plot(x, fit , 'r-')
+    m.plot_mult_gauss(x)
+    print("Multi Gauss:")
+    for i in range(len(m.gaussians)):
+        print(m.gaussians[i].mean)
+        print(m.probabilities[i])
     plt.show()
 
 def max_value(x, y):

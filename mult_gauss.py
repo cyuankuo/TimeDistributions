@@ -10,13 +10,12 @@ class MultiGauss:
         self.probabilities = probabilities 
         self.gaussians = gaussians 
 
-    def plot_mult_gauss(self):
-        t = np.arange(0, 20, 0.1)
-        f = [0] * len(t)
+    def plot_mult_gauss(self, x):
+        f = [0] * len(x)
         for i in range(len(self.probabilities)):
-            f += self.probabilities[i] * stats.norm.pdf(t, self.gaussians[i].mean, self.gaussians[i].deviation)
+            f += self.probabilities[i] * stats.norm.pdf(x, self.gaussians[i].mean, self.gaussians[i].deviation)
             #print(f)
-        plt.plot(t, f)
+        plt.plot(x, f)
 
     def mult_gauss_values(self):
         t = np.arange(0, 20, 0.1)
@@ -43,10 +42,10 @@ class MultiGauss:
                self.gaussians[i].deviation = - (self.gaussians[i].mean/(math.sqrt(2)*special.erfinv(2*threshold - 1)))
         return self
 
-mult_gauss1 = MultiGauss([0.3,0.5],[Gauss(10,2),Gauss(1,3)])
-mult_gauss1.plot_mult_gauss()
-mult_gauss1 = mult_gauss1.normalise_gauss()
-mult_gauss1.plot_mult_gauss()
-mult_gauss1.truncate_gauss(0.05)
-mult_gauss1.plot_mult_gauss()
-plt.show()
+#mult_gauss1 = MultiGauss([0.3,0.5],[Gauss(10,2),Gauss(1,3)])
+#mult_gauss1.plot_mult_gauss()
+#mult_gauss1 = mult_gauss1.normalise_gauss()
+#mult_gauss1.plot_mult_gauss()
+#mult_gauss1.truncate_gauss(0.05)
+#mult_gauss1.plot_mult_gauss()
+#plt.show()
