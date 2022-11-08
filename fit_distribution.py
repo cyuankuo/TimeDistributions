@@ -140,9 +140,12 @@ def fit_gauss(x,y):
     #plt.plot(x, y)
     #plt.plot(x, fit , 'r-')
     m.plot_mult_gauss(x)
+    m.normalise_gauss()
+    m.truncate_gauss(0.05)
+    m.plot_mult_gauss(x)
     print("Multi Gauss:")
     for i in range(len(m.gaussians)):
-        print(m.gaussians[i].mean)
+        #print(m.gaussians[i].mean)
         print(m.probabilities[i])
     plt.show()
 
