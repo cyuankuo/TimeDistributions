@@ -1,5 +1,6 @@
 """
-TODO:  1) Check derived probabilities, 2) Reduction, 3) Final experimant with resulting plots
+p1, p2, code (*current), decra
+TODO:  1) Smart (peaks preserving) truncation; 2) Reduction, 3) Final experimant with resulting plots
 """
 from scipy.optimize import curve_fit
 import numpy as np
@@ -81,7 +82,10 @@ def find_peaks_lib(x,y,min_height,width):
     for peak_i in peaks_i:
         for i in range(len(x)):
             if (i==peak_i):
-                peaks_x.append(x[i])
+                if (x[i] > 0):
+                    peaks_x.append(x[i])
+                else:
+                    peaks_x.append(0)
     return peaks_x
 
 def prepare_init_param(peaks):
@@ -92,7 +96,7 @@ def prepare_init_param(peaks):
         init_params.append(1)
     return init_params
 
-def fit_gauss(x,y):
+def fit_gauss(x,y,label):
     print('x:')
     print(x)
     print('y:')
@@ -117,7 +121,8 @@ def fit_gauss(x,y):
         print(peaks)
         init_params = prepare_init_param(peaks)
         print(init_params)
-        popt, pcov = curve_fit(gauss_func, x, y, p0 = init_params, maxfev=5000000)
+        bounds = ([0] * len(init_params), [np.inf] * len(init_params))
+        popt, pcov = curve_fit(gauss_func, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
         print('COV')
         print(pcov)
         print('parameters:')
@@ -130,8 +135,9 @@ def fit_gauss(x,y):
             peaks = find_peaks_lib(x,y,min_height=min_height,width=None)
             init_params = prepare_init_param(peaks)
             print(init_params)
-            popt, pcov = curve_fit(gauss_func, x, y, p0 = init_params, maxfev=5000000)
-            print('COV')
+            bounds = ([0] * len(init_params), [np.inf] * len(init_params))
+            popt, pcov = curve_fit(gauss_func, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
+            print('COV') 
             print(pcov)
             print('parameters:')
             print(popt)
@@ -139,15 +145,28 @@ def fit_gauss(x,y):
             m = build_multi_gauss_from_params(*popt)
     #plt.plot(x, y)
     #plt.plot(x, fit , 'r-')
-    m.plot_mult_gauss(x)
-    m.normalise_gauss()
-    m.truncate_gauss(0.05)
-    m.plot_mult_gauss(x)
-    print("Multi Gauss:")
+    print("Multi Gauss1:")
     for i in range(len(m.gaussians)):
         #print(m.gaussians[i].mean)
+        print()
         print(m.probabilities[i])
+        print(m.gaussians[i].mean)
+        print(m.gaussians[i].deviation)
+    m.remove_out_bounds_gauss(x)
+    m.plot_mult_gauss(x)
+    m.normalise_gauss()
+    m.truncate_gauss(0.4)
+    m.plot_mult_gauss(x)
+    print("Multi Gauss2:")
+    for i in range(len(m.gaussians)):
+        #print(m.gaussians[i].mean)
+        print()
+        print(m.probabilities[i])
+        print(m.gaussians[i].mean)
+        print(m.gaussians[i].deviation)
+    plt.title(label)
     plt.show()
+    return m
 
 def max_value(x, y):
     max = 0

@@ -14,6 +14,10 @@ import numpy as np
 import seaborn as sns
 from fit_distribution import fit_gauss, find_peaks_lib
 import collections
+import log_parser
+from pm4py.algo.discovery.dfg import algorithm as dfg_discovery
+from pm4py import view_dfg, discover_dfg
+import datetime 
 
 def extract_times():
     for trace in log:
@@ -57,7 +61,15 @@ variant = xes_importer.Variants.ITERPARSE
 parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
 log = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/logs/DomesticDeclarations.xes', 
     variant=variant, parameters=parameters)
+log_for_discovery = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/logs/DomesticDeclarations.xes', 
+    variant=variant, parameters=parameters)
 times_dictionary = {}
+log_processed = log_parser.prepare_log(log_for_discovery, 1)
+dfg, start_activities, end_activities = discover_dfg(log_processed)
+    #for s in start_activities.keys():
+    #    start_activities[s] = 0
+dfg["end", "start"] = 0
+view_dfg(dfg, start_activities, end_activities)
 
 extract_times_with_future()
 
@@ -88,7 +100,7 @@ for key in sorted(times_dictionary.keys()):
     #print(len(kde.density))
     #print(len(kde.support))
     #h.plot(kde.support, kde.density, label="KDE")
-    fit_gauss(kde.support, kde.density)
+    fit_gauss(kde.support, kde.density, key)
    
 
     #y = retrieve_distribution(times_dictionary.get(key))
