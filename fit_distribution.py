@@ -1,6 +1,6 @@
 """
 p1, p2, code (*current), decra
-TODO:  1) Smart (peaks preserving) truncation; 2) Reduction, 3) Final experimant with resulting plots
+TODO:  1) Reduction, 2) Final experimant with resulting plots
 """
 from scipy.optimize import curve_fit
 import numpy as np
@@ -42,6 +42,24 @@ def gauss_func(x, *params):
         y = y + amp * np.exp(-((x - ctr)/wid)**2)
     return y
 
+"""
+ctr - mu
+amp - p * 1/wid * 1/sqrt(pi)
+wid - sqrt (2) * sigma
+Note that if mean is not in x, the peak will not be properly visualised
+"""
+def gauss_func_2(x, *params):
+    y = np.zeros_like(x)
+    for i in range(0, len(params), 3):
+        #print("i:")
+        #print(i)
+        #print(params)
+        mu = params[i]
+        p = params[i+1]
+        sigma = params[i+2]
+        y = y + p * 1 / (math.sqrt(2*math.pi)*sigma) * np.exp(-((x - mu)/(math.sqrt(2)*sigma))**2)
+    return y
+
 def build_multi_gauss_from_params(*params):
     m = MultiGauss([], [])
     for i in range(0, len(params), 3):
@@ -55,6 +73,18 @@ def build_multi_gauss_from_params(*params):
         m.probabilities.append(p)
         m.gaussians.append(g)
     return m
+
+def build_multi_gauss_from_params_2(*params):
+    m = MultiGauss([], [])
+    for i in range(0, len(params), 3):
+        mean = params[i]
+        p = params[i+1]
+        deviation = params[i+2]
+        g = Gauss(mean=mean, deviation=deviation)
+        m.probabilities.append(p)
+        m.gaussians.append(g)
+    return m
+
 
 def find_peaks_custom(x,y,max_number):
     peaks = []
@@ -114,37 +144,39 @@ def fit_gauss(x,y,label):
         mean = 0
         for i in range(len(x)):
             mean += x[i] * y[i]
-        fit = gauss_func(x, *(mean, 1/math.sqrt(2*math.pi), math.sqrt(2)))
-        m = build_multi_gauss_from_params([1.0], [Gauss(mean, 1)])
+        #fit = gauss_func(x, *(mean, 1/math.sqrt(2*math.pi), math.sqrt(2)))
+        fit = gauss_func_2(x, *(mean, 1, 1))
+        m = build_multi_gauss_from_params_2([1.0], [Gauss(mean, 1)])
     else:
         print('peaks:')
         print(peaks)
         init_params = prepare_init_param(peaks)
         print(init_params)
-        bounds = ([0] * len(init_params), [np.inf] * len(init_params))
-        popt, pcov = curve_fit(gauss_func, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
+        bounds = ([0] * len(init_params), [np.inf,1,np.inf] * (len(init_params)//3))
+        popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
         print('COV')
         print(pcov)
         print('parameters:')
         print(popt)
-        fit = gauss_func(x, *popt)
-        m = build_multi_gauss_from_params(*popt)
+        #fit = gauss_func(x, *popt)
+        fit = gauss_func_2(x, *popt)
+        m = build_multi_gauss_from_params_2(*popt)
         # Avoiding flat fitting curves
         while max(fit) < 0.001:
             min_height *= 2
             peaks = find_peaks_lib(x,y,min_height=min_height,width=None)
             init_params = prepare_init_param(peaks)
             print(init_params)
-            bounds = ([0] * len(init_params), [np.inf] * len(init_params))
-            popt, pcov = curve_fit(gauss_func, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
+            bounds = ([0] * len(init_params), [np.inf,1,np.inf] * len(init_params)//3)
+            popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
             print('COV') 
             print(pcov)
             print('parameters:')
             print(popt)
-            fit = gauss_func(x, *popt)
-            m = build_multi_gauss_from_params(*popt)
+            fit = gauss_func_2(x, *popt)
+            m = build_multi_gauss_from_params_2(*popt)
     #plt.plot(x, y)
-    #plt.plot(x, fit , 'r-')
+    plt.plot(x, fit , 'r-')
     print("Multi Gauss1:")
     for i in range(len(m.gaussians)):
         #print(m.gaussians[i].mean)
