@@ -20,6 +20,7 @@ import datetime
 from copy import deepcopy
 from mult_gauss import MultiGauss
 from gauss import Gauss
+from semi_markov import SemiMarkov
 
 def extract_times():
     for trace in log:
@@ -82,7 +83,7 @@ def build_semi_markov(dfg, multi_gausses):
                 else:
                     transitions.add(tuple([key1, key2, dfg[key1,key2]/out_frequences[key1], 
                     multi_gausses["['" + str(key1) + "', '" + str(key2) + "']"]]))
-    print(transitions)
+    return SemiMarkov(states, transitions)
 
 variant = xes_importer.Variants.ITERPARSE
 parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
@@ -139,7 +140,8 @@ for key in sorted(times_dictionary.keys()):
     print(mult_gausses)
     i += 1
 
-build_semi_markov(dfg, mult_gausses)
+semi_markov = build_semi_markov(dfg, mult_gausses)
+semi_markov.reduce_node('Declaration APPROVED by ADMINISTRATION')
 #plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
 
 """

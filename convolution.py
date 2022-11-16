@@ -28,7 +28,7 @@ Convolution of two gaussians
 """
 
 def gauss_convolution(g1, g2):
-    conv = Gauss(g1.mean+g2.mean, g1.variance+g2.variance)
+    conv = Gauss(g1.mean+g2.mean, g1.deviation+g2.deviation)
     return conv
 
 """
@@ -45,6 +45,17 @@ def mult_gauss_convolution(mult1, mult2):
             mult.gaussians.append(gauss_convolution(mult1.gaussians[i],mult2.gaussians[j]))
     return mult
 
+def mult_gauss_sum(mult1, mult2, p1, p2):
+    sum = MultiGauss([],[])
+    for i in range(len(mult1.probabilities)):
+        sum.probabilities.append(p1*mult1.probabilities[i])
+        sum.gaussians.append(mult1.gaussians[i])
+    
+    for i in range(len(mult2.probabilities)):
+        sum.probabilities.append(p2*mult2.probabilities[i])
+        sum.gaussians.append(mult2.gaussians[i])
+    return sum
 
-gauss = mult_gauss_convolution(MultiGauss([0.0,1.0],[Gauss(10,2),Gauss(1,3)]), MultiGauss([0.0,0.1,0.9],[Gauss(1,2),Gauss(4,3),Gauss(7,15)]))
-gauss.plot_mult_gauss()
+
+#gauss = mult_gauss_convolution(MultiGauss([0.0,1.0],[Gauss(10,2),Gauss(1,3)]), MultiGauss([0.0,0.1,0.9],[Gauss(1,2),Gauss(4,3),Gauss(7,15)]))
+#gauss.plot_mult_gauss()
