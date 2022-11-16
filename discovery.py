@@ -15,9 +15,11 @@ import seaborn as sns
 from fit_distribution import fit_gauss, find_peaks_lib
 import collections
 import log_parser
-from pm4py.algo.discovery.dfg import algorithm as dfg_discovery
 from pm4py import view_dfg, discover_dfg
 import datetime 
+from copy import deepcopy
+from mult_gauss import MultiGauss
+from gauss import Gauss
 
 def extract_times():
     for trace in log:
@@ -57,18 +59,42 @@ def retrieve_distribution(y):
     #gamma_distribution.fit_gamma(result)
     return result
 
+def build_semi_markov(dfg, multi_gausses):
+    states = set()
+    transitions = set()
+    out_frequences = {}
+
+    for key in dfg.keys():
+        states.add(key[0])
+    
+    for key1 in states:
+        out_frequences[key1] = 0
+        for key2 in states:
+            if dfg[key1,key2] > 0:
+                out_frequences[key1] += dfg[key1,key2]
+
+
+    for key1 in states:
+        for key2 in states:
+            if dfg[key1,key2] > 0:
+                if ((key1 == 'start') or  (key1 == 'end') or (key2 == 'start') or  (key2 == 'end')):
+                    transitions.add(tuple([key1, key2, dfg[key1,key2]/out_frequences[key1], MultiGauss([1], [Gauss(0, 0)])]))
+                else:
+                    transitions.add(tuple([key1, key2, dfg[key1,key2]/out_frequences[key1], 
+                    multi_gausses["['" + str(key1) + "', '" + str(key2) + "']"]]))
+    print(transitions)
+
 variant = xes_importer.Variants.ITERPARSE
 parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
 log = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/logs/DomesticDeclarations.xes', 
     variant=variant, parameters=parameters)
-log_for_discovery = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/logs/DomesticDeclarations.xes', 
-    variant=variant, parameters=parameters)
+log_for_discovery = deepcopy(log)
 times_dictionary = {}
 log_processed = log_parser.prepare_log(log_for_discovery, 1)
 dfg, start_activities, end_activities = discover_dfg(log_processed)
     #for s in start_activities.keys():
     #    start_activities[s] = 0
-dfg["end", "start"] = 0
+dfg["end", "start"] = 1
 view_dfg(dfg, start_activities, end_activities)
 
 extract_times_with_future()
@@ -76,7 +102,7 @@ extract_times_with_future()
 """
 Fitting using Gaussian KDE
 """
-
+mult_gausses = {}
 #fig = plt.figure(figsize=(10,220))
 i = 1
 for key in sorted(times_dictionary.keys()):
@@ -100,8 +126,8 @@ for key in sorted(times_dictionary.keys()):
     #print(len(kde.density))
     #print(len(kde.support))
     #h.plot(kde.support, kde.density, label="KDE")
-    fit_gauss(kde.support, kde.density, key)
-   
+    multi_gauss = fit_gauss(kde.support, kde.density, key)
+    mult_gausses[str([key.partition('+')[0], key.partition('+')[2]])] = multi_gauss
 
     #y = retrieve_distribution(times_dictionary.get(key))
     #print(y)
@@ -110,9 +136,10 @@ for key in sorted(times_dictionary.keys()):
     
     #print(od.values())
     #fit_gauss(od.keys(), od.values())
-      
+    print(mult_gausses)
     i += 1
 
+build_semi_markov(dfg, mult_gausses)
 #plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
 
 """
