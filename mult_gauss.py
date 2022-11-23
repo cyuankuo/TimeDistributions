@@ -4,6 +4,8 @@ import scipy.stats as stats
 import scipy.special as special
 from gauss import Gauss
 import math
+from copy import deepcopy
+
 
 class MultiGauss:
     def __init__(self, probabilities, gaussians):
@@ -25,6 +27,8 @@ class MultiGauss:
                 del self.gaussians[i]
             else:
                 i+=1
+        self.normalise_gauss()
+
     def mult_gauss_values(self):
         t = np.arange(0, 20, 0.1)
         f = [0] * len(t)
@@ -49,6 +53,16 @@ class MultiGauss:
             if  negative_area > threshold:
                self.gaussians[i].deviation = - (self.gaussians[i].mean/(math.sqrt(2)*special.erfinv(2*threshold - 1)))
         return self
+    
+    def remove_small_prob_gauss(self, threshold):
+        i =0
+        while i < len(self.probabilities):
+            if (self.probabilities[i] < threshold):
+                del self.probabilities[i]
+                del self.gaussians[i]
+            else: 
+                i += 1
+        self.normalise_gauss()
 
 #mult_gauss1 = MultiGauss([0.3,0.5],[Gauss(10,2),Gauss(1,3)])
 #mult_gauss1.plot_mult_gauss()

@@ -5,7 +5,7 @@ import scipy.special as special
 from mult_gauss import MultiGauss
 from gauss import Gauss
 import math
-from convolution import mult_gauss_convolution, mult_gauss_sum
+from convolution import mult_gauss_convolution, mult_gauss_sum, mult_gauss_self_convolution
 
 class SemiMarkov:
     def __init__(self, states, transitions):
@@ -13,13 +13,15 @@ class SemiMarkov:
         # Each transition is a tuple: (from, to, probability, multi Gauss)
         self.transitions = transitions 
 
-    def reduce_node(self, state):
+    def reduce_node(self, state, label):
         if ((state == 'start') or (state == 'end')):
             return
         else:
             # Calsulate self-loop time
+            print("Start calculating self-loop time...")
             for (state, state, _, _) in self.transitions:
                 self_loop_time = self.calculate_self_loop_time(state, 0.0001)
+            print("End calculating self-loop time...")
             #  Add new transitions
             in_transitions = self.get_in_transitions(state)
             out_transitions = self.get_out_transitions(state)
@@ -40,6 +42,8 @@ class SemiMarkov:
                     # Add new transition
                     self.transitions.add((in_state, out_state, all_p, all_time))
                     all_time.plot_mult_gauss(range(0,1000,1))
+                    print(all_time.probabilities)
+                    plt.title(label=label)
                     plt.show()
 
             # Remove state
@@ -54,15 +58,15 @@ class SemiMarkov:
 
     def  calculate_self_loop_time(self, state, threshold):
         m1 = self.get_time(state, state)
-        m = m1
         p = self.get_probability(state, state)
-        if (p == 0):
-            return MultiGauss([1],[Gauss(0,0)])
-        p = 1-p 
-        while (p > threshold):
-            m = mult_gauss_convolution(m, m1)
-            p *= p
-
+        m = MultiGauss([1-p],[Gauss(0,0)])
+        p_current = p
+        k = 1
+        while (p_current > threshold):
+            print(p_current)
+            m = mult_gauss_sum(m, mult_gauss_self_convolution(m1, k), 1, p_current)
+            p_current *= p
+            k += 1
         return m
     
     def get_in_transitions(self, state):

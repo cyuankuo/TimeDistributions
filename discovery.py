@@ -141,7 +141,13 @@ for key in sorted(times_dictionary.keys()):
     i += 1
 
 semi_markov = build_semi_markov(dfg, mult_gausses)
-semi_markov.reduce_node('Declaration APPROVED by ADMINISTRATION')
+states = deepcopy(semi_markov.states)
+i = 1
+for state in states:
+    label = "State " + str(i) + " out of " + str(len(states))
+    print("Reducing node: " + state)
+    semi_markov.reduce_node(state, label)
+    i += 1
 #plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
 
 """

@@ -11,6 +11,7 @@
 #from scipy import stats
 from gauss import Gauss
 from mult_gauss import MultiGauss
+import math
 
 """
 Discere convolution of two functions f1 and f2 represented as lists
@@ -28,7 +29,7 @@ Convolution of two gaussians
 """
 
 def gauss_convolution(g1, g2):
-    conv = Gauss(g1.mean+g2.mean, g1.deviation+g2.deviation)
+    conv = Gauss(g1.mean+g2.mean, math.sqrt((g1.deviation)**2+(g2.deviation)**2))
     return conv
 
 """
@@ -43,6 +44,14 @@ def mult_gauss_convolution(mult1, mult2):
         for j in range(len(mult2.probabilities)):
             mult.probabilities.append(mult1.probabilities[i]*mult2.probabilities[j])
             mult.gaussians.append(gauss_convolution(mult1.gaussians[i],mult2.gaussians[j]))
+    mult.remove_small_prob_gauss(0.001)
+    return mult
+
+def mult_gauss_self_convolution(mult1, k):
+    mult = MultiGauss([],[])
+    for i in range(k):
+        mult = mult_gauss_convolution(mult, mult1)
+    mult.remove_small_prob_gauss(0.001)
     return mult
 
 def mult_gauss_sum(mult1, mult2, p1, p2):
@@ -54,6 +63,8 @@ def mult_gauss_sum(mult1, mult2, p1, p2):
     for i in range(len(mult2.probabilities)):
         sum.probabilities.append(p2*mult2.probabilities[i])
         sum.gaussians.append(mult2.gaussians[i])
+    
+    sum.remove_small_prob_gauss(0.001)
     return sum
 
 

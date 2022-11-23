@@ -176,7 +176,7 @@ def fit_gauss(x,y,label):
             fit = gauss_func_2(x, *popt)
             m = build_multi_gauss_from_params_2(*popt)
     #plt.plot(x, y)
-    plt.plot(x, fit , 'r-')
+    #plt.plot(x, fit , 'r-')
     print("Multi Gauss1:")
     for i in range(len(m.gaussians)):
         #print(m.gaussians[i].mean)
@@ -188,7 +188,7 @@ def fit_gauss(x,y,label):
     m.plot_mult_gauss(x)
     m.normalise_gauss()
     m.truncate_gauss(0.4)
-    m.plot_mult_gauss(x)
+    #m.plot_mult_gauss(x)
     print("Multi Gauss2:")
     for i in range(len(m.gaussians)):
         #print(m.gaussians[i].mean)
@@ -196,8 +196,8 @@ def fit_gauss(x,y,label):
         print(m.probabilities[i])
         print(m.gaussians[i].mean)
         print(m.gaussians[i].deviation)
-    plt.title(label)
-    plt.show()
+    #plt.title(label)
+    #plt.show()
     return m
 
 def max_value(x, y):
