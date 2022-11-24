@@ -50,6 +50,17 @@ def extract_times_with_future():
                     times_dictionary[event['concept:name'] + '+' + next_event['concept:name']].append(time.total_seconds()//3600)
             event = next_event
             first = False
+
+def extract_times_event_log():
+    times = set()
+    for trace in log:
+        first = True
+        start = trace[0]['time:timestamp']
+        end = trace[len(trace)-1] ['time:timestamp']   
+        time = end - start
+        times.add(time.total_seconds()//3600)
+    return times
+
 # retrieve distribution of values from given y
 def retrieve_distribution(y):
     result = {}
@@ -140,6 +151,7 @@ for key in sorted(times_dictionary.keys()):
     print(mult_gausses)
     i += 1
 
+
 semi_markov = build_semi_markov(dfg, mult_gausses)
 states = deepcopy(semi_markov.states)
 i = 1
@@ -156,6 +168,17 @@ for transition in semi_markov.transitions:
         multi_gauss = transition[3]
         multi_gauss.remove_zero()
         multi_gauss.plot_mult_gauss(range(0,1000,1))
+
+
+"""
+Approxiamting event log
+"""
+event_log_times = extract_times_event_log()
+kde_log = sm.nonparametric.KDEUnivariate(times_dictionary.get(key))
+kde_log.fit(bw=4, kernel='gau')  # Estimate the densities
+multi_gauss_log = fit_gauss(kde.support, kde.density, key)
+multi_gauss_log.plot_mult_gauss(range(0,1000,1))
+plt.show() 
 
 #plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
 

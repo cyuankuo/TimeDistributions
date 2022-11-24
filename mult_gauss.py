@@ -24,8 +24,7 @@ class MultiGauss:
             #plt.show()
             #f = stats.norm.pdf(x, self.gaussians[i].mean, self.gaussians[i].deviation)
         plt.plot(x, f)
-        plt.show()
-    
+        #plt.show()
     def remove_out_bounds_gauss(self, x):
         i =0 
         while i < len(self.probabilities):
