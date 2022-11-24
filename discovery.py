@@ -148,6 +148,15 @@ for state in states:
     print("Reducing node: " + state)
     semi_markov.reduce_node(state, label)
     i += 1
+
+print("Number of transitions: " + str(len(semi_markov.transitions)))
+for transition in semi_markov.transitions:
+    if transition[0] == 'start':
+        print(transition)
+        multi_gauss = transition[3]
+        multi_gauss.remove_zero()
+        multi_gauss.plot_mult_gauss(range(0,1000,1))
+
 #plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
 
 """

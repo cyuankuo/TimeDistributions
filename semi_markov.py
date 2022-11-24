@@ -18,8 +18,13 @@ class SemiMarkov:
             return
         else:
             # Calsulate self-loop time
+            self_loop_time = MultiGauss([1], [Gauss(0,0)])
             print("Start calculating self-loop time...")
-            for (state, state, _, _) in self.transitions:
+            self_loops = set()
+            for transition in self.transitions:
+                if ((transition[0] == state) and (transition[1] == state)):
+                    self_loops.add(transition)
+            for transition in self_loops:
                 self_loop_time = self.calculate_self_loop_time(state, 0.0001)
             print("End calculating self-loop time...")
             #  Add new transitions
@@ -49,8 +54,8 @@ class SemiMarkov:
                         if ((transition[0] == in_state) and (transition[1] == out_state)):
                             transition_to_remove.add(transition)
                     for transition in transition_to_remove:
-                        self.transitions.remove(transition) 
-                    
+                        self.transitions.remove(transition)
+                        
                     # Add new transition
                     self.transitions.add((in_state, out_state, all_p, all_time))
 
@@ -85,14 +90,14 @@ class SemiMarkov:
     def get_in_transitions(self, state):
         in_transitions = set()
         for transition in self.transitions:
-            if transition[1] == state:
+            if (transition[1] == state) and (transition[0] != state):
                 in_transitions.add(transition)
         return in_transitions
     
     def get_out_transitions(self, state):
         out_transitions = set()
         for transition in self.transitions:
-            if transition[0] == state:
+            if (transition[0] == state) and (transition[1] != state):
                 out_transitions.add(transition)
         return out_transitions
  

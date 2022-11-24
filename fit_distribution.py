@@ -185,7 +185,7 @@ def fit_gauss(x,y,label):
         print(m.gaussians[i].mean)
         print(m.gaussians[i].deviation)
     m.remove_out_bounds_gauss(x)
-    m.plot_mult_gauss(x)
+    #m.plot_mult_gauss(x)
     m.normalise_gauss()
     m.truncate_gauss(0.4)
     #m.plot_mult_gauss(x)

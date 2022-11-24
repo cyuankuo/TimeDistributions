@@ -15,9 +15,16 @@ class MultiGauss:
     def plot_mult_gauss(self, x):
         f = [0] * len(x)
         for i in range(len(self.probabilities)):
+            print(self.probabilities[i])
+            print(self.gaussians[i].mean)
+            print(self.gaussians[i].deviation)
+            print(self.probabilities[i])
             f += self.probabilities[i] * stats.norm.pdf(x, self.gaussians[i].mean, self.gaussians[i].deviation)
-            #print(f)
+            #plt.plot(x, f)
+            #plt.show()
+            #f = stats.norm.pdf(x, self.gaussians[i].mean, self.gaussians[i].deviation)
         plt.plot(x, f)
+        plt.show()
     
     def remove_out_bounds_gauss(self, x):
         i =0 
@@ -63,6 +70,17 @@ class MultiGauss:
             else: 
                 i += 1
         self.normalise_gauss()
+    
+    def remove_zero(self):
+        i=0
+        while i < len(self.probabilities):
+            if (self.gaussians[i].mean == 0) and (self.gaussians[i].deviation == 0):
+                del self.probabilities[i]
+                del self.gaussians[i]
+            else:
+                i += 1
+        self.normalise_gauss()
+
 
 #mult_gauss1 = MultiGauss([0.3,0.5],[Gauss(10,2),Gauss(1,3)])
 #mult_gauss1.plot_mult_gauss()
