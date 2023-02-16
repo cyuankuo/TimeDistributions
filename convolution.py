@@ -37,34 +37,60 @@ Convolution of two sums of gaussians
 mult1, mult2 are weighted sums of gaussians
 returns another mult
 """
+thershold = 0.001
 
 def mult_gauss_convolution(mult1, mult2):
+#    print("Convolution of Gaussians:")
+#    for i in range(len(mult1.probabilities)):
+#        print(str(mult1.gaussians[i].mean) + ", " + str(mult1.gaussians[i].deviation) + ", " + str(mult1.probabilities[i]))
+#    print()
+#    for i in range(len(mult2.probabilities)):
+#        print(str(mult2.gaussians[i].mean) + ", " + str(mult2.gaussians[i].deviation) + ", " + str(mult2.probabilities[i]))
+#    print("Means:")
+#    print(mult1.calculate_mean())
+#    print(mult2.calculate_mean())
+#    print("Modes:")
+#    print(mult1.calculate_mode())
+#    print(mult2.calculate_mode())
+#    print("Peaks:")
+#    print(mult1.calculate_peak())
+#    print(mult2.calculate_peak())
     mult = MultiGauss([],[])
     for i in range(len(mult1.probabilities)):
         for j in range(len(mult2.probabilities)):
             mult.probabilities.append(mult1.probabilities[i]*mult2.probabilities[j])
             mult.gaussians.append(gauss_convolution(mult1.gaussians[i],mult2.gaussians[j]))
-    mult.remove_small_prob_gauss(0.001)
+    mult.unify_small_prob_gauss(thershold)
+#    print("=======================")
+#    print(mult.calculate_mean())
+#    print(mult.calculate_mode())
+#    print(mult.calculate_peak())
+#    for i in range(len(mult.probabilities)):
+#         print(str(mult.gaussians[i].mean) + ", " + str(mult.gaussians[i].deviation) + ", " + str(mult.probabilities[i]))
     return mult
 
 def mult_gauss_self_convolution(mult1, k):
-    mult = MultiGauss([],[])
+    #print("Self-convolution of Gaussian:")
+    #print(len(mult1.probabilities))
+    mult = MultiGauss([1], [Gauss(0,0)])
     for i in range(k):
         mult = mult_gauss_convolution(mult, mult1)
-    mult.remove_small_prob_gauss(0.001)
+    mult.unify_small_prob_gauss(thershold)
     return mult
 
 def mult_gauss_sum(mult1, mult2, p1, p2):
     sum = MultiGauss([],[])
     for i in range(len(mult1.probabilities)):
-        sum.probabilities.append(p1*mult1.probabilities[i])
-        sum.gaussians.append(mult1.gaussians[i])
+        if p1 > 0:
+            sum.probabilities.append(p1*mult1.probabilities[i])
+            sum.gaussians.append(mult1.gaussians[i])
     
     for i in range(len(mult2.probabilities)):
-        sum.probabilities.append(p2*mult2.probabilities[i])
-        sum.gaussians.append(mult2.gaussians[i])
+        if p2 > 0:
+            sum.probabilities.append(p2*mult2.probabilities[i])
+            sum.gaussians.append(mult2.gaussians[i])
     
-    sum.remove_small_prob_gauss(0.001)
+    sum.unify_small_prob_gauss(thershold)
     return sum
 
 

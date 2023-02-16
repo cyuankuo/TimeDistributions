@@ -89,8 +89,8 @@ def build_multi_gauss_from_params_2(*params):
 def find_peaks_custom(x,y,max_number):
     peaks = []
     max_x = len(x)
-    print(max_x)
-    print(max_x//max_number)
+    #print(max_x)
+    #print(max_x//max_number)
     for i in range (0, max_x - max_x//max_number, max_x//max_number):
         max = 0
         peak_x = 0
@@ -107,8 +107,8 @@ def find_peaks_lib(x,y,min_height,width):
         peaks_i, _ = find_peaks(y, height=[min_height, 1])
     if min_height == None:
         peaks_i, _ = find_peaks(y, width=width)
-    print('Peaks I:')
-    print(len(peaks_i))
+    #print('Peaks I:')
+    #print(len(peaks_i))
     for peak_i in peaks_i:
         for i in range(len(x)):
             if (i==peak_i):
@@ -127,12 +127,12 @@ def prepare_init_param(peaks):
     return init_params
 
 def fit_gauss(x,y,label):
-    print('x:')
-    print(x)
-    print('y:')
-    print(y)
-    #y = moving_average(y, 3)
+    #print('x:')
+    #print(x)
+    #print('y:')
     #print(y)
+    #y = moving_average(y, 3)
+    #print(y) 
     min_height = 0.0001
     peaks = find_peaks_lib(x,y,min_height=min_height,width=None)
 
@@ -148,16 +148,16 @@ def fit_gauss(x,y,label):
         fit = gauss_func_2(x, *(mean, 1, 1))
         m = build_multi_gauss_from_params_2([1.0], [Gauss(mean, 1)])
     else:
-        print('peaks:')
-        print(peaks)
+        #print('peaks:')
+        #print(peaks)
         init_params = prepare_init_param(peaks)
-        print(init_params)
+        #print(init_params)
         bounds = ([0] * len(init_params), [np.inf,1,np.inf] * (len(init_params)//3))
         popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
-        print('COV')
-        print(pcov)
-        print('parameters:')
-        print(popt)
+        #print('COV')
+        #print(pcov)
+        #print('parameters:')
+        #print(popt)
         #fit = gauss_func(x, *popt)
         fit = gauss_func_2(x, *popt)
         m = build_multi_gauss_from_params_2(*popt)
@@ -166,37 +166,40 @@ def fit_gauss(x,y,label):
             min_height *= 2
             peaks = find_peaks_lib(x,y,min_height=min_height,width=None)
             init_params = prepare_init_param(peaks)
-            print(init_params)
-            bounds = ([0] * len(init_params), [np.inf,1,np.inf] * len(init_params)//3)
+            #print(init_params)
+            bounds = ([0] * len(init_params), [np.inf,1,np.inf] * (len(init_params)//3))
             popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
-            print('COV') 
-            print(pcov)
-            print('parameters:')
-            print(popt)
+            #print('COV') 
+            #print(pcov)
+            #print('parameters:')
+            #print(popt)
             fit = gauss_func_2(x, *popt)
             m = build_multi_gauss_from_params_2(*popt)
-    #plt.plot(x, y)
-    #plt.plot(x, fit , 'r-')
-    print("Multi Gauss1:")
-    for i in range(len(m.gaussians)):
+    #plt.plot(x, y, 'b-')
+    
+    #print("Multi Gauss1:")
         #print(m.gaussians[i].mean)
-        print()
-        print(m.probabilities[i])
-        print(m.gaussians[i].mean)
-        print(m.gaussians[i].deviation)
+    #print(m.calculate_mean())
+        #print(m.probabilities[i])
+        #print(m.gaussians[i].mean)
+        #print(m.gaussians[i].deviation)
     m.remove_out_bounds_gauss(x)
     #m.plot_mult_gauss(x)
     m.normalise_gauss()
-    m.truncate_gauss(0.4)
-    #m.plot_mult_gauss(x)
-    print("Multi Gauss2:")
-    for i in range(len(m.gaussians)):
+#   m.truncate_gauss(0.05)
+#   m.plot_mult_gauss(x, 'Truncated multi-Gauss curve')
+    #print("Multi Gauss2:")
         #print(m.gaussians[i].mean)
-        print()
-        print(m.probabilities[i])
-        print(m.gaussians[i].mean)
-        print(m.gaussians[i].deviation)
+    #print(m.calculate_mean())
+        #print(m.probabilities[i])
+        #print(m.gaussians[i].mean)
+        #print(m.gaussians[i].deviation)
     #plt.title(label)
+    #plt.plot(x, fit, 'k--', linewidth=2, label='KDE and fitted multi-Gauss curves')
+    #plt.xlim([-10, 200])
+    #plt.legend(loc="upper right")
+    #plt.xlabel('Waiting time in hours')
+    #plt.ylabel('Probability')
     #plt.show()
     return m
 
@@ -214,8 +217,8 @@ def max_value(x, y):
 def filter_peaks(peaks, x, y, max_number):
     filtered_peaks = []
     ind = collect_indexes_of_peaks(peaks, x)
-    print("Indeces of peaks:")
-    print(len(ind))
+    #print("Indeces of peaks:")
+    #print(len(ind))
     for i in ind:
         cnt = 0
         for j in ind:
@@ -223,8 +226,8 @@ def filter_peaks(peaks, x, y, max_number):
                 cnt += 1
         if cnt < max_number:
             filtered_peaks.append(x[i])
-    print("Peaks after filter:")
-    print(len(filtered_peaks))
+    #print("Peaks after filter:")
+    #print(len(filtered_peaks))
     return filtered_peaks
 
 def collect_indexes_of_peaks(peaks, x):

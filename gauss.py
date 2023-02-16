@@ -10,8 +10,8 @@ class Gauss:
 
     def plot_gauss(self):
         t = np.arange(0, 20, 0.1)
-        plt.plot(t, stats.norm.pdf(t, self.mean, self.deviation))
-        plt.show()
+        #plt.plot(t, stats.norm.pdf(t, self.mean, self.deviation))
+        #plt.show()
 
     """
     Calculate the areaunder the curve when x < 0
