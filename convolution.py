@@ -37,7 +37,7 @@ Convolution of two sums of gaussians
 mult1, mult2 are weighted sums of gaussians
 returns another mult
 """
-thershold = 0.001
+threshold = 0.00001
 
 def mult_gauss_convolution(mult1, mult2):
 #    print("Convolution of Gaussians:")
@@ -60,7 +60,7 @@ def mult_gauss_convolution(mult1, mult2):
         for j in range(len(mult2.probabilities)):
             mult.probabilities.append(mult1.probabilities[i]*mult2.probabilities[j])
             mult.gaussians.append(gauss_convolution(mult1.gaussians[i],mult2.gaussians[j]))
-    mult.unify_small_prob_gauss(thershold)
+    mult.unify_small_prob_gauss(threshold)
 #    print("=======================")
 #    print(mult.calculate_mean())
 #    print(mult.calculate_mode())
@@ -75,7 +75,7 @@ def mult_gauss_self_convolution(mult1, k):
     mult = MultiGauss([1], [Gauss(0,0)])
     for i in range(k):
         mult = mult_gauss_convolution(mult, mult1)
-    mult.unify_small_prob_gauss(thershold)
+    mult.unify_small_prob_gauss(threshold)
     return mult
 
 def mult_gauss_sum(mult1, mult2, p1, p2):
@@ -90,7 +90,7 @@ def mult_gauss_sum(mult1, mult2, p1, p2):
             sum.probabilities.append(p2*mult2.probabilities[i])
             sum.gaussians.append(mult2.gaussians[i])
     
-    sum.unify_small_prob_gauss(thershold)
+    sum.unify_small_prob_gauss(threshold)
     return sum
 
 

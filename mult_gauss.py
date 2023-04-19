@@ -5,6 +5,7 @@ import scipy.special as special
 from gauss import Gauss
 import math
 from copy import deepcopy
+from scipy.stats import truncnorm
 
 
 class MultiGauss:
@@ -142,19 +143,29 @@ class MultiGauss:
             i += 1
         return mode
     
-    def calculate_peak(self):
+    def calculate_peaks(self):
         i =0
-        peak = 0
-        deviation = 0
-        prob = 0 
+        prob = 0
+        max_probabilities = []
+        max_means = []
+        max_length = 5 
         while i < len(self.probabilities):
             prob = self.probabilities[i]
-            peak = self.gaussians[i].mean
-            deviation = self.gaussians[i].deviation
-            if peak > 10 and peak < 20:
-                break
+            if i < max_length:
+                max_probabilities.append(prob)
+            else:
+                for max_prob in max_probabilities:
+                    if prob > max_prob:
+                        max_probabilities.remove(max_prob)
+                        max_probabilities.append(prob)
+                        break
             i += 1
-        return peak, deviation, prob
+        i = 0
+        while i < len(max_probabilities):
+            max_means.append(self.gaussians[i].mean)
+            i += 1
+
+        return max_means, max_probabilities
     
     def calculate_sum_probabilities(self):
         i =0
@@ -163,7 +174,118 @@ class MultiGauss:
             prob += self.probabilities[i]
             i += 1
         return prob
+    
+    def calc_observed(self, lower_bound, upper_bound, samp):
+        cnt = 0
+        for s in samp:
+            if s <= upper_bound and s >= lower_bound:
+                cnt += 1
+        return cnt
 
+    def calc_expected(self, lower_bound, upper_bound, samp):
+        expected = 0
+        for i in range(len(self.probabilities)):
+            cdf_lower, cdf_upper = stats.norm.cdf([lower_bound, upper_bound], self.gaussians[i].mean, self.gaussians[i].deviation)
+            expected += len(samp)*self.probabilities[i] * (cdf_upper-cdf_lower)
+        return expected
+
+
+    def calc_expected_truncated(self, lower_bound, upper_bound, samp):
+        expected = 0
+        for i in range(len(self.probabilities)):
+            a, b = (0 - self.gaussians[i].mean) / self.gaussians[i].deviation, np.inf
+            cdf_lower, cdf_upper = truncnorm.cdf([lower_bound, upper_bound], a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation)
+            expected += len(samp)*self.probabilities[i] * (cdf_upper-cdf_lower)
+        return expected
+
+    def calc_chi_square(self, bins, samp):
+        chi_square = 0
+        #print(samp)
+        upper_bound = np.max(samp)
+        step = np.max(samp)/bins
+
+        for i in range(bins):
+           lower_bound = i*step
+           upper_bound = (i+1)*step
+           #print(lower_bound)
+           #print(upper_bound)
+           observed = self.calc_observed(lower_bound, upper_bound, samp)
+           expected = self.calc_expected_truncated(lower_bound, upper_bound, samp)
+           #print()
+           #print(observed)
+           #print(expected)
+           #print((observed-expected)**2 / expected)
+           chi_square += (observed-expected)**2 / expected
+           
+
+        return chi_square
+
+    def calc_kl_divergence(self, bins, samp):
+        kl_divergence = 0
+        #print(samp)
+        upper_bound = np.max(samp)
+        step = np.max(samp)/bins
+
+        for i in range(bins):
+           lower_bound = i*step
+           upper_bound = (i+1)*step
+           #print(lower_bound)
+           #print(upper_bound)
+           #P()
+           observed = self.calc_observed(lower_bound, upper_bound, samp)/len(samp)
+           expected = self.calc_expected_truncated(lower_bound, upper_bound, samp)/len(samp)
+           #print()
+           #print(observed)
+           #print(expected)
+           #print((observed-expected)**2 / expected)
+           #print(expected)
+           #print(observed)
+           if observed != 0 and expected != 0:
+                kl_divergence += observed*(np.log(observed/expected))
+           
+
+        return kl_divergence
+    
+    def calc_chi_square_uniform(self, bins, samp):
+        chi_square = 0
+        upper_bound = np.max(samp)
+        step = np.max(samp)/bins
+
+        for i in range(bins):
+           lower_bound = i*step
+           upper_bound = (i+1)*step
+           #print(lower_bound)
+           #print(upper_bound)
+           observed = self.calc_observed(lower_bound, upper_bound, samp)
+           expected = step
+           #print()
+           #print(observed)
+           #print(expected)
+           #print((observed-expected)**2 / expected)
+           chi_square += (observed-expected)**2 / expected
+           
+
+        return chi_square
+
+
+    def plot_trunc_mult_gauss(self, x, label, color):
+        f = [0] * len(x)
+        for i in range(len(self.probabilities)):
+            #print(self.probabilities[i])
+            #a, b = 0, np.inf
+            a, b = (0 - self.gaussians[i].mean) / self.gaussians[i].deviation, np.inf
+            f += self.probabilities[i] * truncnorm.pdf(x, a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation)
+            #plt.plot(x, f)
+            #plt.show()
+            #f = stats.norm.pdf(x, self.gaussians[i].mean, self.gaussians[i].deviation)
+#        if label == 'print!':
+#            plt.clf()
+#            frame1 = plt.gca()
+#            frame1.axes.xaxis.set_ticklabels([])
+#            frame1.axes.yaxis.set_ticklabels([])
+#            frame1.axes.xaxis.set_ticks([])
+#            frame1.axes.yaxis.set_ticks([])
+        plt.plot(x, f, color, linewidth=2, label=label)
 #mult_gauss1 = MultiGauss([0.3,0.5],[Gauss(10,2),Gauss(1,3)])
 #mult_gauss1.plot_mult_gauss()
 #mult_gauss1 = mult_gauss1.normalise_gauss()
