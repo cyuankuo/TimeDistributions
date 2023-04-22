@@ -5,7 +5,7 @@ import scipy.special as special
 from mult_gauss import MultiGauss
 from gauss import Gauss
 import math
-from convolution import mult_gauss_convolution, mult_gauss_sum, mult_gauss_self_convolution
+from convolution import mult_gauss_convolution, mult_gauss_sum, threshold
 
 def mean_time_between_events(e1,e2,skip_events,log):
         times = set()
@@ -41,12 +41,13 @@ class SemiMarkov:
             # Calsulate self-loop time
             self_loop_time = MultiGauss([1], [Gauss(0,0)])
             #print("Start calculating self-loop time...")
-            self_loops = set()
-            for transition in self.transitions:
-                if ((transition[0] == state) and (transition[1] == state)):
-                    self_loops.add(transition)
-            for transition in self_loops:
-                self_loop_time = self.calculate_self_loop_time(state, 0.0001)
+            #self_loops = set()
+            #for transition in self.transitions:
+            #    if ((transition[0] == state) and (transition[1] == state)):
+            #        self_loops.add(transition)
+            #        break
+            #for transition in self_loops:
+            self_loop_time = self.calculate_self_loop_time(state, threshold)
 #                self_loop_time.plot_mult_gauss(range(0,1000,1), str(state) + " " + str(state))
                 #print("Self-loop mean:")
                 #print(self_loop_time.calculate_mean())

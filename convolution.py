@@ -37,7 +37,7 @@ Convolution of two sums of gaussians
 mult1, mult2 are weighted sums of gaussians
 returns another mult
 """
-threshold = 0.00001
+threshold = 0.0001
 
 def mult_gauss_convolution(mult1, mult2):
 #    print("Convolution of Gaussians:")

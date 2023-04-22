@@ -112,7 +112,7 @@ for times in event_log_times:
     if times < 1000:
         filtered_event_log_times.append(times)
 
-for k in [1,2]:
+for k in [1]:
     start = time.time()
     log_for_discovery = deepcopy(log)
     times_dictionary = {}
