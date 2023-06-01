@@ -103,7 +103,7 @@ def build_semi_markov(dfg, multi_gausses):
 
 variant = xes_importer.Variants.ITERPARSE
 parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
-log = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/logs/bpi_challenge_2013_incidents.xes', 
+log = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/logs/DomesticDeclarations.xes', 
     variant=variant, parameters=parameters)
 
 event_log_times = extract_times_event_log()
@@ -112,7 +112,7 @@ for times in event_log_times:
     if times < 1000:
         filtered_event_log_times.append(times)
 
-for k in [1]:
+for k in [1,2,3,4,5]:
     start = time.time()
     log_for_discovery = deepcopy(log)
     times_dictionary = {}
@@ -141,7 +141,8 @@ for k in [1]:
 
         #dist = retrieve_distribution(times_dictionary.get(key))
         #h = fig.add_subplot(len(times_dictionary), 1, i)
-        #y, x, _ = plt.hist(times_dictionary.get(key), bins=200, fc=(0, 1, 0, 0.4), density = True, label='Histogram for time distribution')
+        #cm = plt.cm.get_cmap('OrRd')
+        #y, x, _ = plt.hist(times_dictionary.get(key), bins=200, fc=cm(0.25), density = True, label='Histogram for time distribution')
         #print(x)
         #print(y)
         #plt.plot(x, y, 'tab:brown', linewidth=1)
@@ -153,15 +154,22 @@ for k in [1]:
         kde = sm.nonparametric.KDEUnivariate(times_dictionary.get(key))
         kde.fit(bw=4, kernel='gau')  # Estimate the densities
     
+       
 
         #print(kde.cdf)
         #print(len(kde.density))
         #print(len(kde.support))
-        #plt.plot(kde.support, kde.density, label="KDE")
+        
         #plt.show()
-        multi_gauss = fit_gauss(kde.support, kde.density, key)
+       
+        #plt.plot(kde.support, kde.density, 'k', label="KDE", linewidth=2)
+        multi_gauss = fit_gauss(kde.support, kde.density, key, times_dictionary.get(key))
         mult_gausses[str([key.partition('->')[0], key.partition('->')[2]])] = multi_gauss
-
+        #plt.xlim([-10, 200])
+        #plt.legend(loc="upper right")
+        #plt.xlabel('Waiting time in hours')
+        #plt.ylabel('Probability')
+        #plt.show()
         #y = retrieve_distribution(times_dictionary.get(key))
         #print(y) 
         #od = collections.OrderedDict(sorted(y.items()))
@@ -184,6 +192,8 @@ for k in [1]:
         #    continue
         label = "State " + str(i) + " out of " + str(len(states))
         semi_markov.reduce_node(state, label, log)
+        #print("Size:")
+        #print(len(semi_markov.states))
         i += 1  
 
 
@@ -195,23 +205,28 @@ for k in [1]:
             color = {
                 1: "tab:red",
                 2: "tab:blue",
-                3: "tab:orange",
-                4: "tab:brown",
+                3: "k",
+                4: "tab:green",
                 5: "tab:purple",
+                10: "tab:red"
             }
 #            multi_gauss.truncate_gauss(0.05)
             multi_gauss.plot_trunc_mult_gauss(range(-10,400,1), label="Semi-Markov Model, order="+str(k), color = color.get(k))
             print()
             print('Overall: ---------------')
-            print("Mean:")
-            print(multi_gauss.calculate_mean())
-
-            print()
-            print("Mean metric:")
             log_mean = np.average(event_log_times)
+            print("Log mean:")
+            print(log_mean)
+            print("Mean metric:")
             model_mean =  multi_gauss.calculate_mean()
-            mean_accuracy = 1 - np.abs(log_mean-model_mean)/(log_mean+model_mean)
+            mean_accuracy = model_mean/log_mean
             print(mean_accuracy)
+
+           #print()
+           #print("Mean metric after truncation:")
+           #model_mean =  multi_gauss.calc_mean_with_truncations()
+           #mean_accuracy = model_mean/log_mean
+           #print(mean_accuracy)
 
             print()
             print("Peaks:")
@@ -242,7 +257,8 @@ Plotting event log
 
 
 #print(event_log_times)
-y, x, _ = plt.hist(filtered_event_log_times, bins=200, fc=(0, 1, 0, 0.4), density=True, label='Event log')
+cm = plt.cm.get_cmap('OrRd')
+y, x, _ = plt.hist(filtered_event_log_times, bins=200, fc=cm(0.25), density=True, label='Event log')
 #plt.xlabel('Waiting time in hours')
 #plt.ylabel('Probability')
 #kde_log = sm.nonparametric.KDEUnivariate(list(event_log_times))
@@ -252,6 +268,8 @@ y, x, _ = plt.hist(filtered_event_log_times, bins=200, fc=(0, 1, 0, 0.4), densit
 plt.xlim([-10, 400])
 plt.legend(loc="upper right")
 plt.title('')
+plt.xlabel('Overall time in hours')
+plt.ylabel('Probability')
 plt.show()
 
 #plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')

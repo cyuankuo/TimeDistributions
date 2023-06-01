@@ -1,7 +1,4 @@
-"""
-p1, p2, code (*current), decra
-TODO:  1) Reduction, 2) Final experimant with resulting plots
-"""
+
 from scipy.optimize import curve_fit
 import numpy as np
 import matplotlib.pyplot as plt
@@ -126,7 +123,7 @@ def prepare_init_param(peaks):
         init_params.append(1)
     return init_params
 
-def fit_gauss(x,y,label):
+def fit_gauss(x,y,label, real_xs):
     #print('x:')
     #print(x)
     #print('y:')
@@ -153,7 +150,18 @@ def fit_gauss(x,y,label):
         init_params = prepare_init_param(peaks)
         #print(init_params)
         bounds = ([0] * len(init_params), [np.inf,1,np.inf] * (len(init_params)//3))
-        popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
+        try:
+            popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
+        except np.linalg.LinAlgError:
+                #print(x)
+                #print(y)
+                #print(mean)
+                #print(np.sqrt(variance))
+                #print(real_xs)
+                print("Exception")
+                mean = max(real_xs, key = real_xs.count)
+                m = MultiGauss([1.0],[Gauss(mean, 1)])
+                return m
         #print('COV')
         #print(pcov)
         #print('parameters:')
@@ -168,24 +176,36 @@ def fit_gauss(x,y,label):
             init_params = prepare_init_param(peaks)
             #print(init_params)
             bounds = ([0] * len(init_params), [np.inf,1,np.inf] * (len(init_params)//3))
-            popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
+            try:
+                popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
             #print('COV') 
-            #print(pcov)
+            #print(pcov) 
             #print('parameters:')
             #print(popt)
-            fit = gauss_func_2(x, *popt)
-            m = build_multi_gauss_from_params_2(*popt)
+                fit = gauss_func_2(x, *popt)
+                m = build_multi_gauss_from_params_2(*popt)
+            except RuntimeError:
+                #print(x)
+                #print(y)
+                #print(mean)
+                #print(np.sqrt(variance))
+                #print(real_xs)
+                print("Exception")
+                mean = max(real_xs, key = real_xs.count)
+                m = MultiGauss([1.0],[Gauss(mean, 1)])
+                break
     #plt.plot(x, y, 'b-')
     
     #print("Multi Gauss1:")
-        #print(m.gaussians[i].mean)
+    #print(m.gaussians[i].mean)
     #print(m.calculate_mean())
-        #print(m.probabilities[i])
-        #print(m.gaussians[i].mean)
-        #print(m.gaussians[i].deviation)
     m.remove_out_bounds_gauss(x)
-    #m.plot_mult_gauss(x)
     m.normalise_gauss()
+    #for i in range(len(m.probabilities)):
+    #    print(m.probabilities[i])
+    #    print(m.gaussians[i].mean)
+    #    print(m.gaussians[i].deviation)
+    #m.plot_mult_gauss(x, label=label, color='r--')
 #    m.truncate_gauss(0.05)
 #   m.plot_mult_gauss(x, 'Truncated multi-Gauss curve')
     #print("Multi Gauss2:")
@@ -195,11 +215,7 @@ def fit_gauss(x,y,label):
         #print(m.gaussians[i].mean)
         #print(m.gaussians[i].deviation)
     #plt.title(label)
-    #plt.plot(x, fit, 'k--', linewidth=2, label='KDE and fitted multi-Gauss curves')
-    #plt.xlim([-10, 200])
-    #plt.legend(loc="upper right")
-    #plt.xlabel('Waiting time in hours')
-    #plt.ylabel('Probability')
+    #plt.plot(x, fit, 'r--', linewidth=2, label='Fitted GMM curve')
     #plt.show()
     return m
 

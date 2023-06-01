@@ -30,7 +30,7 @@ class MultiGauss:
 #            frame1.axes.yaxis.set_ticks([])
         plt.plot(x, f, color, linewidth=2, label=label)
 
-            #plt.show()
+        #plt.show()
     def remove_out_bounds_gauss(self, x):
         i =0 
         while i < len(self.probabilities):
@@ -225,6 +225,8 @@ class MultiGauss:
         #print(samp)
         upper_bound = np.max(samp)
         step = np.max(samp)/bins
+        print(step)
+        print(np.max(samp))
 
         for i in range(bins):
            lower_bound = i*step
@@ -233,6 +235,8 @@ class MultiGauss:
            #print(upper_bound)
            #P()
            observed = self.calc_observed(lower_bound, upper_bound, samp)/len(samp)
+           #expected = 1 / bins
+           #print(expected)
            expected = self.calc_expected_truncated(lower_bound, upper_bound, samp)/len(samp)
            #print()
            #print(observed)
@@ -271,8 +275,6 @@ class MultiGauss:
     def plot_trunc_mult_gauss(self, x, label, color):
         f = [0] * len(x)
         for i in range(len(self.probabilities)):
-            #print(self.probabilities[i])
-            #a, b = 0, np.inf
             a, b = (0 - self.gaussians[i].mean) / self.gaussians[i].deviation, np.inf
             f += self.probabilities[i] * truncnorm.pdf(x, a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation)
             #plt.plot(x, f)
@@ -285,11 +287,14 @@ class MultiGauss:
 #            frame1.axes.yaxis.set_ticklabels([])
 #            frame1.axes.xaxis.set_ticks([])
 #            frame1.axes.yaxis.set_ticks([])
-        plt.plot(x, f, color, linewidth=2, label=label)
-#mult_gauss1 = MultiGauss([0.3,0.5],[Gauss(10,2),Gauss(1,3)])
-#mult_gauss1.plot_mult_gauss()
-#mult_gauss1 = mult_gauss1.normalise_gauss()
-#mult_gauss1.plot_mult_gauss()
-#mult_gauss1.truncate_gauss(0.05)
-#mult_gauss1.plot_mult_gauss()
-#plt.show()
+        plt.plot(x, f, color, linewidth=1, label=label)
+
+    
+    def calc_mean_with_truncations(self):
+        mean = 0
+        for i in range(len(self.probabilities)):
+            a, b = (0 - self.gaussians[i].mean) / self.gaussians[i].deviation, np.inf
+            mean += self.probabilities[i] * truncnorm.mean(a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation)
+            #print(self.gaussians[i].mean)
+            #print(truncnorm.mean(a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation))
+        return mean
