@@ -1,8 +1,10 @@
 
+"""
+@author: akalenkova (anna.kalenkova@adelaide.edu.au)
+"""
+
 from scipy.optimize import curve_fit
 import numpy as np
-import matplotlib.pyplot as plt
-import scipy.stats as stats
 from gauss import Gauss
 from mult_gauss import MultiGauss
 from scipy.signal import find_peaks
@@ -48,9 +50,6 @@ Note that if mean is not in x, the peak will not be properly visualised
 def gauss_func_2(x, *params):
     y = np.zeros_like(x)
     for i in range(0, len(params), 3):
-        #print("i:")
-        #print(i)
-        #print(params)
         mu = params[i]
         p = params[i+1]
         sigma = params[i+2]
@@ -86,8 +85,6 @@ def build_multi_gauss_from_params_2(*params):
 def find_peaks_custom(x,y,max_number):
     peaks = []
     max_x = len(x)
-    #print(max_x)
-    #print(max_x//max_number)
     for i in range (0, max_x - max_x//max_number, max_x//max_number):
         max = 0
         peak_x = 0
@@ -104,8 +101,6 @@ def find_peaks_lib(x,y,min_height,width):
         peaks_i, _ = find_peaks(y, height=[min_height, 1])
     if min_height == None:
         peaks_i, _ = find_peaks(y, width=width)
-    #print('Peaks I:')
-    #print(len(peaks_i))
     for peak_i in peaks_i:
         for i in range(len(x)):
             if (i==peak_i):
@@ -123,50 +118,28 @@ def prepare_init_param(peaks):
         init_params.append(1)
     return init_params
 
-def fit_gauss(x,y,label, real_xs):
-    #print('x:')
-    #print(x)
-    #print('y:')
-    #print(y)
-    #y = moving_average(y, 3)
-    #print(y) 
+def fit_gauss(x, y, real_xs):
     min_height = 0.0001
     peaks = find_peaks_lib(x,y,min_height=min_height,width=None)
 
     # when peaks are narrow --> calculate mean value
     if peaks == []:
-        #peaks = [max_peak(x, y)]
-        #peaks = find_peaks_lib(x,y,1)
-        #peaks = filter_peaks(peaks, x, y, 50)
         mean = 0
         for i in range(len(x)):
             mean += x[i] * y[i]
-        #fit = gauss_func(x, *(mean, 1/math.sqrt(2*math.pi), math.sqrt(2)))
         fit = gauss_func_2(x, *(mean, 1, 1))
         m = build_multi_gauss_from_params_2([1.0], [Gauss(mean, 1)])
     else:
-        #print('peaks:')
-        #print(peaks)
         init_params = prepare_init_param(peaks)
-        #print(init_params)
         bounds = ([0] * len(init_params), [np.inf,1,np.inf] * (len(init_params)//3))
         try:
             popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
         except np.linalg.LinAlgError:
-                #print(x)
-                #print(y)
-                #print(mean)
-                #print(np.sqrt(variance))
-                #print(real_xs)
                 print("Exception")
+                print(y)
                 mean = max(real_xs, key = real_xs.count)
                 m = MultiGauss([1.0],[Gauss(mean, 1)])
                 return m
-        #print('COV')
-        #print(pcov)
-        #print('parameters:')
-        #print(popt)
-        #fit = gauss_func(x, *popt)
         fit = gauss_func_2(x, *popt)
         m = build_multi_gauss_from_params_2(*popt)
         # Avoiding flat fitting curves
@@ -174,49 +147,19 @@ def fit_gauss(x,y,label, real_xs):
             min_height *= 2
             peaks = find_peaks_lib(x,y,min_height=min_height,width=None)
             init_params = prepare_init_param(peaks)
-            #print(init_params)
             bounds = ([0] * len(init_params), [np.inf,1,np.inf] * (len(init_params)//3))
             try:
-                popt, pcov = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
-            #print('COV') 
-            #print(pcov) 
-            #print('parameters:')
-            #print(popt)
+                popt, p = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
                 fit = gauss_func_2(x, *popt)
                 m = build_multi_gauss_from_params_2(*popt)
             except RuntimeError:
-                #print(x)
-                #print(y)
-                #print(mean)
-                #print(np.sqrt(variance))
-                #print(real_xs)
                 print("Exception")
                 mean = max(real_xs, key = real_xs.count)
                 m = MultiGauss([1.0],[Gauss(mean, 1)])
                 break
-    #plt.plot(x, y, 'b-')
-    
-    #print("Multi Gauss1:")
-    #print(m.gaussians[i].mean)
-    #print(m.calculate_mean())
+
     m.remove_out_bounds_gauss(x)
     m.normalise_gauss()
-    #for i in range(len(m.probabilities)):
-    #    print(m.probabilities[i])
-    #    print(m.gaussians[i].mean)
-    #    print(m.gaussians[i].deviation)
-    #m.plot_mult_gauss(x, label=label, color='r--')
-#    m.truncate_gauss(0.05)
-#   m.plot_mult_gauss(x, 'Truncated multi-Gauss curve')
-    #print("Multi Gauss2:")
-        #print(m.gaussians[i].mean)
-    #print(m.calculate_mean())
-        #print(m.probabilities[i])
-        #print(m.gaussians[i].mean)
-        #print(m.gaussians[i].deviation)
-    #plt.title(label)
-    #plt.plot(x, fit, 'r--', linewidth=2, label='Fitted GMM curve')
-    #plt.show()
     return m
 
 def max_value(x, y):
@@ -225,16 +168,10 @@ def max_value(x, y):
         if y(x) > max:
             max = y(x)
     return max
-#mult_gauss1 = MultiGauss([0.5,0.5],[Gauss(10,2),Gauss(1,3)])
-#t = np.arange(0, 20, 0.1)
-
-#fit_gauss(t, mult_gauss1.mult_gauss_values())
 
 def filter_peaks(peaks, x, y, max_number):
     filtered_peaks = []
     ind = collect_indexes_of_peaks(peaks, x)
-    #print("Indeces of peaks:")
-    #print(len(ind))
     for i in ind:
         cnt = 0
         for j in ind:
@@ -242,8 +179,6 @@ def filter_peaks(peaks, x, y, max_number):
                 cnt += 1
         if cnt < max_number:
             filtered_peaks.append(x[i])
-    #print("Peaks after filter:")
-    #print(len(filtered_peaks))
     return filtered_peaks
 
 def collect_indexes_of_peaks(peaks, x):

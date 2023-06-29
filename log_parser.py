@@ -1,5 +1,9 @@
+"""
+@author: akalenkova (anna.kalenkova@adelaide.edu.au)
+"""
+
 from pm4py.objects.log.obj import Event
-import datetime, statistics
+import datetime
 
 
 # k is the order of the model

@@ -1,42 +1,19 @@
+"""
+@author: akalenkova (anna.kalenkova@adelaide.edu.au)
+"""
+
 from pm4py.objects.log.importer.xes import importer as xes_importer
-from pm4py.objects.dfg.exporter import exporter as dfg_exporter
-from pm4py.algo.discovery.dfg import algorithm as dfg_discovery
-from pm4py.statistics.start_activities.log import get as start_activities
-from pm4py.statistics.end_activities.log import get as end_activities
-from pm4py.visualization.dfg import visualizer as dfg_visualization
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-from scipy import stats
 import statsmodels.api as sm
-from itertools import groupby
-import gamma_distribution
-import numpy as np
-import seaborn as sns
-from fit_distribution import fit_gauss, find_peaks_lib
-import collections
+from fit_distribution import fit_gauss
 import log_parser
-from pm4py import view_dfg, discover_dfg
+from pm4py import discover_dfg
 import time 
 from copy import deepcopy
 from mult_gauss import MultiGauss
 from gauss import Gauss
 from semi_markov import SemiMarkov
-
-def extract_times():
-    for trace in log:
-        first = True
-        for next_event in trace:
-            if not first:
-                time = next_event['time:timestamp'] - event['time:timestamp']
-                hours = time.total_seconds()//3600
-                if hours > 250:
-                    continue
-                if not event['concept:name'] in times_dictionary.keys():
-                    times_dictionary[event['concept:name']] = [time.total_seconds()//3600]
-                else:
-                    times_dictionary[event['concept:name']].append(time.total_seconds()//3600)
-            event = next_event
-            first = False
+import sys
 
 def extract_times_with_future(log):
     for trace in log:
@@ -58,7 +35,6 @@ def extract_times_event_log():
         end = trace[len(trace)-1] ['time:timestamp']   
         time = end - start
         times.append(time.total_seconds()//3600)
-    #print(times)
     return times
 
 # retrieve distribution of values from given y
@@ -68,7 +44,6 @@ def retrieve_distribution(y):
         count_i = y.count(i)
         result[i] = count_i
         result[i] /= len(y)
-    #gamma_distribution.fit_gamma(result)
     return result
 
 def build_semi_markov(dfg, multi_gausses):
@@ -79,7 +54,6 @@ def build_semi_markov(dfg, multi_gausses):
 
     for key in dfg.keys():
         states.add(key[0])
-        #print(states)
     
     for key1 in states:
         out_frequences[key1] = 0
@@ -96,15 +70,14 @@ def build_semi_markov(dfg, multi_gausses):
                 else:
                     transitions.add(tuple([key1, key2, dfg[key1,key2]/out_frequences[key1], 
                     multi_gausses["['" + str(key1) + "', '" + str(key2) + "']"]]))
+    print()
     print('DFG is built')
-    time.sleep(10)
     return SemiMarkov(states, transitions)
 
 
 variant = xes_importer.Variants.ITERPARSE
 parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
-log = xes_importer.apply('/Users/a1230101//Documents/GitHub/TimeDistributions/logs/DomesticDeclarations.xes', 
-    variant=variant, parameters=parameters)
+log = xes_importer.apply('logs/' + sys.argv[1], variant=variant, parameters=parameters)
 
 event_log_times = extract_times_event_log()
 filtered_event_log_times = []
@@ -112,17 +85,24 @@ for times in event_log_times:
     if times < 1000:
         filtered_event_log_times.append(times)
 
+
 for k in [1,2,3,4,5]:
+    print()
+    print("Order: k=" + str(k))
+
     start = time.time()
     log_for_discovery = deepcopy(log)
     times_dictionary = {}
     log_processed = log_parser.prepare_log(log_for_discovery, k)
     dfg, start_activities, end_activities = discover_dfg(log_processed)
-        #for s in start_activities.keys():
-        #    start_activities[s] = 0
     dfg["end", "start"] = 1
-    #view_dfg(dfg, start_activities, end_activities)
 
+    end = time.time()
+    print()
+    print("Discovery time:")
+    print(end-start)
+
+    start = time.time()
     extract_times_with_future(log_processed)
 
 
@@ -130,76 +110,33 @@ for k in [1,2,3,4,5]:
     Fitting using Gaussian KDE
     """
     mult_gausses = {}
-    #fig = plt.figure(figsize=(10,220))
-    i = 1
     for key in sorted(times_dictionary.keys()):
-    #  if i<9:
-        i += 1
-    #      continue
-        #print('Activity:')
-        #print(key)
-
-        #dist = retrieve_distribution(times_dictionary.get(key))
-        #h = fig.add_subplot(len(times_dictionary), 1, i)
-        #cm = plt.cm.get_cmap('OrRd')
-        #y, x, _ = plt.hist(times_dictionary.get(key), bins=200, fc=cm(0.25), density = True, label='Histogram for time distribution')
-        #print(x)
-        #print(y)
-        #plt.plot(x, y, 'tab:brown', linewidth=1)
-        #h.set_ylim(0, min(max(y),1))
-        #h.title.set_text(key)
-        #h.set_xlabel('Waiting time in hours')
-        #h.set_ylabel("Number of occurancies")
-        #print(times_dictionary.get(key))
         kde = sm.nonparametric.KDEUnivariate(times_dictionary.get(key))
         kde.fit(bw=4, kernel='gau')  # Estimate the densities
-    
-       
-
-        #print(kde.cdf)
-        #print(len(kde.density))
-        #print(len(kde.support))
-        
-        #plt.show()
-       
-        #plt.plot(kde.support, kde.density, 'k', label="KDE", linewidth=2)
-        multi_gauss = fit_gauss(kde.support, kde.density, key, times_dictionary.get(key))
+        multi_gauss = fit_gauss(kde.support, kde.density, times_dictionary.get(key))
         mult_gausses[str([key.partition('->')[0], key.partition('->')[2]])] = multi_gauss
-        #plt.xlim([-10, 200])
-        #plt.legend(loc="upper right")
-        #plt.xlabel('Waiting time in hours')
-        #plt.ylabel('Probability')
-        #plt.show()
-        #y = retrieve_distribution(times_dictionary.get(key))
-        #print(y) 
-        #od = collections.OrderedDict(sorted(y.items()))
-        #fit_gauss(list(od.keys()), list(od.values()))
-        
-        #print(od.values())
-        #fit_gauss(od.keys(), od.values())
 
-        #print(mult_gausses)
-        i += 1
-
+    end = time.time()
+    print()
+    print("Fitting time:")
+    print(end - start)
 
     semi_markov = build_semi_markov(dfg, mult_gausses)
     print("Number of states: " + str(len(semi_markov.states)))
     print("Number of transitions: " + str(len(semi_markov.transitions)))
     states = deepcopy(semi_markov.states)
-    i = 1
-    for state in states:
-        #if str(state) != "Queued":
-        #    continue
-        label = "State " + str(i) + " out of " + str(len(states))
-        semi_markov.reduce_node(state, label, log)
-        #print("Size:")
-        #print(len(semi_markov.states))
-        i += 1  
-
+    
+    start = time.time()
+    while len(semi_markov.states) > 2:
+        next_state = semi_markov.select_next_state()
+        semi_markov.reduce_node(next_state)
+    end = time.time()
+    print()
+    print("Reduction time:")
+    print(end-start)
 
     for transition in semi_markov.transitions:
         if transition[0] == 'start':
-            print(transition)
             multi_gauss = transition[3]
             multi_gauss.remove_zero()
             color = {
@@ -210,61 +147,25 @@ for k in [1,2,3,4,5]:
                 5: "tab:purple",
                 10: "tab:red"
             }
-#            multi_gauss.truncate_gauss(0.05)
             multi_gauss.plot_trunc_mult_gauss(range(-10,400,1), label="Semi-Markov Model, order="+str(k), color = color.get(k))
-            print()
-            print('Overall: ---------------')
-            log_mean = np.average(event_log_times)
-            print("Log mean:")
-            print(log_mean)
-            print("Mean metric:")
-            model_mean =  multi_gauss.calculate_mean()
-            mean_accuracy = model_mean/log_mean
-            print(mean_accuracy)
-
-           #print()
-           #print("Mean metric after truncation:")
-           #model_mean =  multi_gauss.calc_mean_with_truncations()
-           #mean_accuracy = model_mean/log_mean
-           #print(mean_accuracy)
-
             print()
             print("Peaks:")
             print(multi_gauss.calculate_peaks())
-            
-            #print()
-            #print("Chi square:")
-            #print(multi_gauss.calc_chi_square(20, filtered_event_log_times))
-
-            #print()
-            #print("Chi square metric:")
-            #print(1-multi_gauss.calc_chi_square(20, filtered_event_log_times)/multi_gauss.calc_chi_square_uniform(20, filtered_event_log_times))
-
+                
             print()
             print("KL Divergence:")
             print(multi_gauss.calc_kl_divergence(20, filtered_event_log_times))
-            
+            print()
+                
 
-    end = time.time()
-    print("Execution time for k=" + str(k))
-    print(end - start)
 
 """
 Plotting event log
 """
 
-
-
-
-#print(event_log_times)
 cm = plt.cm.get_cmap('OrRd')
-y, x, _ = plt.hist(filtered_event_log_times, bins=200, fc=cm(0.25), density=True, label='Event log')
-#plt.xlabel('Waiting time in hours')
-#plt.ylabel('Probability')
-#kde_log = sm.nonparametric.KDEUnivariate(list(event_log_times))
-#kde_log.fit(bw=20, kernel='gau')  # Estimate the densities
-#plt.title('Event log time')
-#multi_gauss_log = fit_gauss(kde_log.support, kde_log.density, 'Event log')
+y, x, _ = plt.hist(filtered_event_log_times, bins=150, fc=cm(0.25), density=True, label='Event log')
+ 
 plt.xlim([-10, 400])
 plt.legend(loc="upper right")
 plt.title('')
@@ -272,28 +173,4 @@ plt.xlabel('Overall time in hours')
 plt.ylabel('Probability')
 plt.show()
 
-#plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarations.pdf')
 
-"""
-Fitting without KDE
-"""
-"""
-fig = plt.figure(figsize=(10,220))
-i = 1
-for key in sorted(times_dictionary.keys()):
-    times = times_dictionary.get(key)
-    h = fig.add_subplot(len(times_dictionary), 1, i)
-    y_hist, x_hist, _ = h.hist(times, bins=1000, facecolor='g', density = True,)
-    h.set_ylim(0, min(max(y_hist),1))
-    h.title.set_text(key)
-    h.set_xlabel('Waiting time in hours')
-    h.set_ylabel("Number of occurancies")
-    dict_of_times = retrieve_distribution(times)
-    odered_times = collections.OrderedDict(sorted(dict_of_times.items()))
-    fit_gauss(x_hist[1:], y_hist)
-
-    #h.plot(kde.support, kde.density, label="KDE")
-      
-    i += 1
-#plt.savefig('/Users/a1230101//Documents/GitHub/TimeDistributions/time_plots/DomesticDeclarationsFit.pdf')
-"""

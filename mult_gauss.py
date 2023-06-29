@@ -1,3 +1,7 @@
+"""
+@author: akalenkova (anna.kalenkova@adelaide.edu.au)
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
@@ -16,21 +20,10 @@ class MultiGauss:
     def plot_mult_gauss(self, x, label, color):
         f = [0] * len(x)
         for i in range(len(self.probabilities)):
-            #print(self.probabilities[i])
             f += self.probabilities[i] * stats.norm.pdf(x, self.gaussians[i].mean, self.gaussians[i].deviation)
-            #plt.plot(x, f)
-            #plt.show()
-            #f = stats.norm.pdf(x, self.gaussians[i].mean, self.gaussians[i].deviation)
-#        if label == 'print!':
-#            plt.clf()
-#            frame1 = plt.gca()
-#            frame1.axes.xaxis.set_ticklabels([])
-#            frame1.axes.yaxis.set_ticklabels([])
-#            frame1.axes.xaxis.set_ticks([])
-#            frame1.axes.yaxis.set_ticks([])
         plt.plot(x, f, color, linewidth=2, label=label)
 
-        #plt.show()
+
     def remove_out_bounds_gauss(self, x):
         i =0 
         while i < len(self.probabilities):
@@ -62,13 +55,10 @@ class MultiGauss:
         for i in range(len(self.gaussians)):
             negative_area = self.gaussians[i].calc_negative_area()
             if  negative_area > threshold:
-                #print(negative_area)
                 self.gaussians[i].deviation = - (self.gaussians[i].mean/(math.sqrt(2)*special.erfinv(2*threshold - 1)))
         return self
     
     def remove_small_prob_gauss(self, threshold):
-        #print("Old size:")
-        #print(len(self.probabilities))
         i =0
         while i < len(self.probabilities):
             if (self.probabilities[i] < threshold):
@@ -77,13 +67,8 @@ class MultiGauss:
             else: 
                 i += 1
         self.normalise_gauss()
-        #print("New size:")
-        #print(len(self.probabilities)) 
-
     
     def unify_small_prob_gauss(self, threshold):
-        #print("Old size:")
-        #print(len(self.probabilities))
         i = 0
         sum_prob = 0
         sum_means = 0
@@ -91,9 +76,7 @@ class MultiGauss:
         while i < len(self.probabilities):
             if (self.probabilities[i] < threshold):
                 sum_prob += self.probabilities[i]
-            i += 1
-        #print("Sum probabilitties:")
-        #print(sum_prob)     
+            i += 1  
         if sum_prob > 0:
             i = 0
             while i < len(self.probabilities):
@@ -109,10 +92,6 @@ class MultiGauss:
         if sum_prob > 0:
             self.probabilities.append(sum_prob)  
             self.gaussians.append(Gauss(sum_means, sum_deviations))
-        #print("Sum probabilitties:")
-        #print(sum_prob) 
-        #print("New size:")
-        #print(len(self.probabilities)) 
     
     def remove_zero(self):
         i=0
@@ -200,21 +179,14 @@ class MultiGauss:
 
     def calc_chi_square(self, bins, samp):
         chi_square = 0
-        #print(samp)
         upper_bound = np.max(samp)
         step = np.max(samp)/bins
 
         for i in range(bins):
            lower_bound = i*step
            upper_bound = (i+1)*step
-           #print(lower_bound)
-           #print(upper_bound)
            observed = self.calc_observed(lower_bound, upper_bound, samp)
            expected = self.calc_expected_truncated(lower_bound, upper_bound, samp)
-           #print()
-           #print(observed)
-           #print(expected)
-           #print((observed-expected)**2 / expected)
            chi_square += (observed-expected)**2 / expected
            
 
@@ -222,7 +194,22 @@ class MultiGauss:
 
     def calc_kl_divergence(self, bins, samp):
         kl_divergence = 0
-        #print(samp)
+        upper_bound = np.max(samp)
+        step = np.max(samp)/bins
+
+        for i in range(bins):
+           lower_bound = i*step
+           upper_bound = (i+1)*step
+           observed = self.calc_observed(lower_bound, upper_bound, samp)/len(samp)
+           expected = self.calc_expected_truncated(lower_bound, upper_bound, samp)/len(samp)
+           if observed != 0 and expected != 0:
+                kl_divergence += observed*(np.log(observed/expected))
+           
+
+        return kl_divergence
+
+    def calc_kl_divergence_uniform(self, bins, samp):
+        kl_divergence = 0
         upper_bound = np.max(samp)
         step = np.max(samp)/bins
         print(step)
@@ -231,25 +218,14 @@ class MultiGauss:
         for i in range(bins):
            lower_bound = i*step
            upper_bound = (i+1)*step
-           #print(lower_bound)
-           #print(upper_bound)
-           #P()
            observed = self.calc_observed(lower_bound, upper_bound, samp)/len(samp)
-           #expected = 1 / bins
-           #print(expected)
-           expected = self.calc_expected_truncated(lower_bound, upper_bound, samp)/len(samp)
-           #print()
-           #print(observed)
-           #print(expected)
-           #print((observed-expected)**2 / expected)
-           #print(expected)
-           #print(observed)
+           expected = 1 / bins
            if observed != 0 and expected != 0:
                 kl_divergence += observed*(np.log(observed/expected))
            
 
         return kl_divergence
-    
+
     def calc_chi_square_uniform(self, bins, samp):
         chi_square = 0
         upper_bound = np.max(samp)
@@ -258,14 +234,8 @@ class MultiGauss:
         for i in range(bins):
            lower_bound = i*step
            upper_bound = (i+1)*step
-           #print(lower_bound)
-           #print(upper_bound)
            observed = self.calc_observed(lower_bound, upper_bound, samp)
            expected = step
-           #print()
-           #print(observed)
-           #print(expected)
-           #print((observed-expected)**2 / expected)
            chi_square += (observed-expected)**2 / expected
            
 
@@ -277,16 +247,6 @@ class MultiGauss:
         for i in range(len(self.probabilities)):
             a, b = (0 - self.gaussians[i].mean) / self.gaussians[i].deviation, np.inf
             f += self.probabilities[i] * truncnorm.pdf(x, a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation)
-            #plt.plot(x, f)
-            #plt.show()
-            #f = stats.norm.pdf(x, self.gaussians[i].mean, self.gaussians[i].deviation)
-#        if label == 'print!':
-#            plt.clf()
-#            frame1 = plt.gca()
-#            frame1.axes.xaxis.set_ticklabels([])
-#            frame1.axes.yaxis.set_ticklabels([])
-#            frame1.axes.xaxis.set_ticks([])
-#            frame1.axes.yaxis.set_ticks([])
         plt.plot(x, f, color, linewidth=1, label=label)
 
     
@@ -295,6 +255,4 @@ class MultiGauss:
         for i in range(len(self.probabilities)):
             a, b = (0 - self.gaussians[i].mean) / self.gaussians[i].deviation, np.inf
             mean += self.probabilities[i] * truncnorm.mean(a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation)
-            #print(self.gaussians[i].mean)
-            #print(truncnorm.mean(a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation))
         return mean
