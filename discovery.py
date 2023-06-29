@@ -8,12 +8,16 @@ import statsmodels.api as sm
 from fit_distribution import fit_gauss
 import log_parser
 from pm4py import discover_dfg
+from pm4py.algo.discovery.dfg import algorithm as dfg_discovery
 import time 
 from copy import deepcopy
 from mult_gauss import MultiGauss
 from gauss import Gauss
 from semi_markov import SemiMarkov
-import sys
+import sys, dfg_utils, stat_utils
+import numpy as np
+np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)                 
+
 
 def extract_times_with_future(log):
     for trace in log:
@@ -80,6 +84,7 @@ parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
 log = xes_importer.apply('logs/' + sys.argv[1], variant=variant, parameters=parameters)
 
 event_log_times = extract_times_event_log()
+
 filtered_event_log_times = []
 for times in event_log_times:
     if times < 1000:
@@ -87,6 +92,7 @@ for times in event_log_times:
 
 
 for k in [1,2,3,4,5]:
+ 
     print()
     print("Order: k=" + str(k))
 
@@ -102,9 +108,42 @@ for k in [1,2,3,4,5]:
     print("Discovery time:")
     print(end-start)
 
+    "Express analysis"
+
+    # cut the log to get better precision of the limiting probabilities
+    number_of_chunks = len(log_for_discovery)
+    overall_times = []
+    cnt = 0
+    for traces in np.array_split(log_for_discovery, number_of_chunks):
+        #processed_traces = log_parser.prepare_log(traces, k)
+        #for i in range(len(traces[0])):
+        #    print(traces[0][i])
+        #print(cnt)
+        cnt += 1
+        dfg_express = dfg_discovery.apply(traces, variant=dfg_discovery.Variants.FREQUENCY)
+        dfg_express["end", "start"] = 1
+        log_activities=log_parser.log_activities(traces)
+        times = log_parser.calculate_times(traces) 
+        means = stat_utils.calculate_means(dfg_express, times, log_activities)
+        #print(means)
+        limiting_probabilities = dfg_utils.calculate_limiting_probabilities(dfg_express, log_activities)
+        #print(limiting_probabilities)
+        overall_time = 0
+        for i in range(0, len(log_activities)):
+            overall_time += limiting_probabilities[log_activities[i]]*means[log_activities[i]]
+        overall_time /= limiting_probabilities['start']
+        overall_times.append(overall_time)
+    estimated_mean_time = np.average(overall_times)
+  
+    print()
+    print("Mean time of the process:")
+    print(str(round(estimated_mean_time//86400)) + 'd ' + str(round(estimated_mean_time%86400//3600)) + 'h ' + str(round(estimated_mean_time%3600//60)) + 'm ' + str(round(estimated_mean_time%60)) + 's ')
+
+    
+    "Full analysis"
+    
     start = time.time()
     extract_times_with_future(log_processed)
-
 
     """
     Fitting using Gaussian KDE
