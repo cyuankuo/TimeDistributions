@@ -16,7 +16,6 @@ from gauss import Gauss
 from semi_markov import SemiMarkov
 import sys, dfg_utils, stat_utils
 import numpy as np
-np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)                 
 
 
 def extract_times_with_future(log):
@@ -113,13 +112,9 @@ for k in [1,2,3,4,5]:
     # cut the log to get better precision of the limiting probabilities
     number_of_chunks = len(log_for_discovery)
     overall_times = []
-    cnt = 0
-    for traces in np.array_split(log_for_discovery, number_of_chunks):
-        #processed_traces = log_parser.prepare_log(traces, k)
-        #for i in range(len(traces[0])):
-        #    print(traces[0][i])
-        #print(cnt)
-        cnt += 1
+    temp_log_for_discovery = deepcopy(log_for_discovery)
+    for traces in np.array_split(np.array(log_for_discovery, dtype=object), number_of_chunks):
+
         dfg_express = dfg_discovery.apply(traces, variant=dfg_discovery.Variants.FREQUENCY)
         dfg_express["end", "start"] = 1
         log_activities=log_parser.log_activities(traces)
