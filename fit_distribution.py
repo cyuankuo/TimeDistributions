@@ -152,7 +152,7 @@ def fit_gauss(x, y, real_xs):
                 popt, p = curve_fit(gauss_func_2, x, y, p0 = init_params, maxfev=5000000, bounds=bounds)
                 fit = gauss_func_2(x, *popt)
                 m = build_multi_gauss_from_params_2(*popt)
-            except RuntimeError:
+            except TypeError:
                 print("Exception")
                 mean = max(real_xs, key = real_xs.count)
                 m = MultiGauss([1.0],[Gauss(mean, 1)])
