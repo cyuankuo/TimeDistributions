@@ -15,8 +15,7 @@ from mult_gauss import MultiGauss
 from gauss import Gauss
 from semi_markov import SemiMarkov
 import sys, dfg_utils, stat_utils
-import numpy as np
-
+import numpy as np, scipy.stats as st
 
 def extract_times_with_future(log):
     for trace in log:
@@ -81,16 +80,20 @@ def build_semi_markov(dfg, multi_gausses):
 variant = xes_importer.Variants.ITERPARSE
 parameters = {variant.value.Parameters.TIMESTAMP_SORT: True}
 log = xes_importer.apply('logs/' + sys.argv[1], variant=variant, parameters=parameters)
+discovery_times = {}
+fitting_times = {}
+reduction_times = {}
+kl_divergences = {}
 
 event_log_times = extract_times_event_log()
 
 filtered_event_log_times = []
 for times in event_log_times:
-    if times < 1000:
+    if times < 1200:
         filtered_event_log_times.append(times)
 
 
-for k in [1,2,3,4,5]:
+for k in [1,2]:
  
     print()
     print("Order: k=" + str(k))
@@ -99,6 +102,7 @@ for k in [1,2,3,4,5]:
     log_for_discovery = deepcopy(log)
     times_dictionary = {}
     log_processed = log_parser.prepare_log(log_for_discovery, k)
+    print(log_processed)
     dfg, start_activities, end_activities = discover_dfg(log_processed)
     dfg["end", "start"] = 1
 
@@ -106,15 +110,24 @@ for k in [1,2,3,4,5]:
     print()
     print("Discovery time:")
     print(end-start)
+    if k not in discovery_times:
+        discovery_times[k] = {end-start}
+    else:
+        discovery_times[k].add(end-start)
 
     "Express analysis"
 
     # cut the log to get better precision of the limiting probabilities
     number_of_chunks = len(log_for_discovery)
     overall_times = []
+    #cnt = 0
     temp_log_for_discovery = deepcopy(log_for_discovery)
-    for traces in np.array_split(np.array(log_for_discovery, dtype=object), number_of_chunks):
-
+    for traces in np.array_split(np.array(temp_log_for_discovery, dtype=object), number_of_chunks):
+        processed_traces = log_parser.prepare_log(traces, k)
+        #for i in range(len(traces[0])):
+        #    print(traces[0][i])
+        #print(cnt)
+    #    cnt += 1
         dfg_express = dfg_discovery.apply(traces, variant=dfg_discovery.Variants.FREQUENCY)
         dfg_express["end", "start"] = 1
         log_activities=log_parser.log_activities(traces)
@@ -130,8 +143,6 @@ for k in [1,2,3,4,5]:
         overall_times.append(overall_time)
     estimated_mean_time = np.average(overall_times)
   
-    print()
-    print("Mean time of the process:")
     print(str(round(estimated_mean_time//86400)) + 'd ' + str(round(estimated_mean_time%86400//3600)) + 'h ' + str(round(estimated_mean_time%3600//60)) + 'm ' + str(round(estimated_mean_time%60)) + 's ')
 
     
@@ -154,10 +165,21 @@ for k in [1,2,3,4,5]:
     print()
     print("Fitting time:")
     print(end - start)
+    if k not in fitting_times:
+        fitting_times[k] = {end-start}
+    else:
+        fitting_times[k].add(end-start)
 
     semi_markov = build_semi_markov(dfg, mult_gausses)
     print("Number of states: " + str(len(semi_markov.states)))
     print("Number of transitions: " + str(len(semi_markov.transitions)))
+    state_degrees = semi_markov.state_degrees()
+    avg_state_degree = np.average(state_degrees)
+    print("Average state degree: " + str(avg_state_degree))
+    max_state_degree = np.max(state_degrees)
+    print("Max state degree: " + str(max_state_degree))
+
+
     states = deepcopy(semi_markov.states)
     
     start = time.time()
@@ -168,6 +190,10 @@ for k in [1,2,3,4,5]:
     print()
     print("Reduction time:")
     print(end-start)
+    if k not in reduction_times:
+        reduction_times[k] = {end-start}
+    else:
+        reduction_times[k].add(end-start)
 
     for transition in semi_markov.transitions:
         if transition[0] == 'start':
@@ -178,8 +204,7 @@ for k in [1,2,3,4,5]:
                 2: "tab:blue",
                 3: "k",
                 4: "tab:green",
-                5: "tab:purple",
-                10: "tab:red"
+                5: "tab:purple"
             }
             multi_gauss.plot_trunc_mult_gauss(range(-10,400,1), label="Semi-Markov Model, order="+str(k), color = color.get(k))
             print()
@@ -188,9 +213,66 @@ for k in [1,2,3,4,5]:
                 
             print()
             print("KL Divergence:")
-            print(multi_gauss.calc_kl_divergence(20, filtered_event_log_times))
+            kl_divergence = multi_gauss.calc_kl_divergence(20, filtered_event_log_times, event_log_times)
+            print(kl_divergence)
+            if k not in kl_divergences:
+                kl_divergences[k] = {kl_divergence}
+            else:
+                kl_divergences[k].add(kl_divergence)
             print()
-                
+                    
+    
+for k in [1,2]:
+    print()
+    print("Metrics for order " + str(k) + ":")
+    discovery_times_values = discovery_times[k]
+    print(discovery_times_values)
+    discovery_times_average = np.mean(list(discovery_times_values))
+    print("Discovery times average:")
+    print(discovery_times_average)
+    discovery_times_interval = st.t.interval(0.95, df=len(discovery_times_values)-1, 
+              loc=np.mean(list(discovery_times_values)), 
+              scale=st.sem(list(discovery_times_values)))
+    print("Discovery times interval:")
+    print(discovery_times_interval[1]-discovery_times_average)
+    print()
+
+    fitting_times_values = fitting_times[k]
+    print(fitting_times_values)
+    fitting_times_average = np.mean(list(fitting_times_values))
+    print("Fitting times average:")
+    print(fitting_times_average)
+    fitting_times_interval = st.t.interval(0.95, df=len(fitting_times_values)-1, 
+              loc=np.mean(list(fitting_times_values)), 
+              scale=st.sem(list(fitting_times_values)))
+    print("Fitting times interval:")
+    print(fitting_times_interval[1]-fitting_times_average)
+    print()
+
+    reduction_times_values = reduction_times[k]
+    print(reduction_times_values)
+    reduction_times_average = np.mean(list(reduction_times_values))
+    print("Reduction times average:")
+    print(reduction_times_average)
+    reduction_times_interval = st.t.interval(0.95, df=len(reduction_times_values)-1, 
+              loc=np.mean(list(reduction_times_values)), 
+              scale=st.sem(list(reduction_times_values)))
+    print("Reduction times interval:")
+    print(reduction_times_interval[1]-reduction_times_average)
+    print()
+
+    kl_divergence_values = kl_divergences[k]
+    print(kl_divergence_values)
+    kl_divergence_average = np.mean(list(kl_divergence_values))
+    print("KL-divergence average:")
+    print(kl_divergence_average)
+    kl_divergence_interval = st.t.interval(0.95, df=len(kl_divergence_values)-1, 
+              loc=np.mean(list(kl_divergence_values)), 
+              scale=st.sem(list(kl_divergence_values)))
+    print("KL-divergence interval:")
+    print(kl_divergence_interval[1]-kl_divergence_average)
+    print()
+
 
 
 """

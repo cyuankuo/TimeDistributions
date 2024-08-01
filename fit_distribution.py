@@ -156,7 +156,13 @@ def fit_gauss(x, y, real_xs):
                 print("Exception")
                 mean = max(real_xs, key = real_xs.count)
                 m = MultiGauss([1.0],[Gauss(mean, 1)])
+                break   
+            except RuntimeError:
+                print("Exception")
+                mean = max(real_xs, key = real_xs.count)
+                m = MultiGauss([1.0],[Gauss(mean, 1)])
                 break
+        
 
     m.remove_out_bounds_gauss(x)
     m.normalise_gauss()

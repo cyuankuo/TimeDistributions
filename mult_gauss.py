@@ -161,20 +161,20 @@ class MultiGauss:
                 cnt += 1
         return cnt
 
-    def calc_expected(self, lower_bound, upper_bound, samp):
+    def calc_expected(self, lower_bound, upper_bound):
         expected = 0
         for i in range(len(self.probabilities)):
             cdf_lower, cdf_upper = stats.norm.cdf([lower_bound, upper_bound], self.gaussians[i].mean, self.gaussians[i].deviation)
-            expected += len(samp)*self.probabilities[i] * (cdf_upper-cdf_lower)
+            expected += self.probabilities[i] * (cdf_upper-cdf_lower)
         return expected
 
 
-    def calc_expected_truncated(self, lower_bound, upper_bound, samp):
+    def calc_expected_truncated(self, lower_bound, upper_bound):
         expected = 0
         for i in range(len(self.probabilities)):
             a, b = (0 - self.gaussians[i].mean) / self.gaussians[i].deviation, np.inf
             cdf_lower, cdf_upper = truncnorm.cdf([lower_bound, upper_bound], a=a, b=b, loc=self.gaussians[i].mean, scale=self.gaussians[i].deviation)
-            expected += len(samp)*self.probabilities[i] * (cdf_upper-cdf_lower)
+            expected += self.probabilities[i] * (cdf_upper-cdf_lower)
         return expected
 
     def calc_chi_square(self, bins, samp):
@@ -192,7 +192,7 @@ class MultiGauss:
 
         return chi_square
 
-    def calc_kl_divergence(self, bins, samp):
+    def calc_kl_divergence(self, bins, samp, all_samp):
         kl_divergence = 0
         upper_bound = np.max(samp)
         step = np.max(samp)/bins
@@ -200,8 +200,8 @@ class MultiGauss:
         for i in range(bins):
            lower_bound = i*step
            upper_bound = (i+1)*step
-           observed = self.calc_observed(lower_bound, upper_bound, samp)/len(samp)
-           expected = self.calc_expected_truncated(lower_bound, upper_bound, samp)/len(samp)
+           observed = self.calc_observed(lower_bound, upper_bound, samp)/len(all_samp)
+           expected = self.calc_expected_truncated(lower_bound, upper_bound)
            if observed != 0 and expected != 0:
                 kl_divergence += observed*(np.log(observed/expected))
            

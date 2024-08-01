@@ -4,7 +4,9 @@
 
 from mult_gauss import MultiGauss
 from gauss import Gauss
-from convolution import mult_gauss_convolution, mult_gauss_sum, threshold
+from convolution import mult_gauss_convolution, mult_gauss_sum
+
+self_loop_threshold = 0.1
 
 def mean_time_between_events(e1,e2,skip_events,log):
         times = set()
@@ -39,7 +41,7 @@ class SemiMarkov:
             # Calsulate self-loop time
             self_loop_time = MultiGauss([1], [Gauss(0,0)])
             #for transition in self_loops:
-            self_loop_time = self.calculate_self_loop_time(state, threshold)
+            self_loop_time = self.calculate_self_loop_time(state)
             #  Add new transitions
             in_transitions = self.get_in_transitions(state)
             out_transitions = self.get_out_transitions(state)
@@ -80,13 +82,13 @@ class SemiMarkov:
             self.states.remove(state)
 
 
-    def  calculate_self_loop_time(self, state, threshold):
+    def  calculate_self_loop_time(self, state):
         m1 = self.get_time(state, state)
         p = self.get_probability(state, state)
         m = MultiGauss([1-p],[Gauss(0,0)])
         p_current = p * (1-p)
         conv = MultiGauss([1],[Gauss(0,0)])
-        while (p_current > threshold):
+        while (p_current > self_loop_threshold):
             conv = mult_gauss_convolution(m1, conv)
             m = mult_gauss_sum(m, conv, 1, p_current)
             p_current *= p
@@ -143,6 +145,13 @@ class SemiMarkov:
                 min_degree = degree
         return next_state
 
-
+    def state_degrees(self):
+        state_degrees = []
+        for state in self.states:
+            if ((state != 'start') and (state != 'end')):
+                in_transitions = len(self.get_in_transitions(state))
+                out_transitions = len(self.get_out_transitions(state))
+                state_degrees.append(max(in_transitions, out_transitions))
+        return state_degrees
 
     
