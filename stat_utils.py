@@ -3,6 +3,7 @@
 """
 
 import statistics
+import numpy as np
 
 def calculate_means(dfg,times,log_activities):
     all_means = {}
@@ -38,3 +39,30 @@ def calculate_standard_deviation_times(dfg,times,log_activities):
 
     return all_standard_deviation_times
 
+def calc_observed(lower_bound, upper_bound, samp):
+    cnt = 0
+    for s in samp:
+        if s < upper_bound and s >= lower_bound:
+            cnt += 1
+    return cnt
+
+def discrete_kl_divergence(y, samp, bins):
+    kl_divergence = 0
+    step = len(y)/bins
+    #print("Step:")
+    #print(step)
+
+    for i in range(0, bins-1, 1):
+        expected = 0
+        lower_bound = i*step
+        upper_bound = (i+1)*step
+        
+        for j in range (int(lower_bound), int(upper_bound), 1):
+            expected += (y[j] + y[j+1]) / 2
+
+        observed = calc_observed(lower_bound, upper_bound, samp)/len(samp)   
+        #print(expected)
+        #print(observed)
+        if observed != 0 and expected != 0:
+            kl_divergence += observed*(np.log(observed/expected))
+    return kl_divergence       
