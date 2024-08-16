@@ -1,6 +1,9 @@
+GNU 4.0 Open Source
+
 """
 @author: akalenkova (anna.kalenkova@adelaide.edu.au)
 """
+
 
 Please execute:
 
