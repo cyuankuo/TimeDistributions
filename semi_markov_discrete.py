@@ -6,6 +6,7 @@ from mult_gauss import MultiGauss
 from gauss import Gauss
 from convolution import mult_gauss_convolution, mult_gauss_sum, threshold
 import numpy as np
+import time
 
 
 
@@ -34,7 +35,51 @@ class SemiMarkovDiscrete:
         self.transitions = transitions
         self.transition_times = tranisition_times 
 
+    def start_state(self):
+        for state in self.states:
+            if state == 'start':
+                return state
     
+    def end_state(self):
+        for state in self.states:
+            if state == 'end':
+                return state
+
+    def draw_transition(self, state):
+        transitions = self.get_out_transitions_with_loop(state)
+        prob = []
+        trans = []
+        for transition in transitions:
+            prob.append(transition[2])
+            trans.append(transition)
+        #print(prob)
+        index = np.random.choice(len(trans), 1, p=prob)
+        transition = trans[index[0]]
+        return transition
+
+    def draw_time(self, transition, times_dictionary):
+        time = np.random.choice(times_dictionary[transition[0]+"->"+transition[1]])
+        return time
+
+
+    def simulate(self, times_dictionary):
+        times = list()
+        #iterations = 100
+        #for i in range(iterations):
+        t_end = time.time() + 60 * 1
+        while time.time() < t_end:
+            overall_time = 0
+            state = self.start_state()
+            start = self.start_state() 
+            end = self.end_state() 
+            while state != end:
+                transition = self.draw_transition(state)
+                if state != start and transition[1] != end:
+                    overall_time += self.draw_time(transition, times_dictionary)
+                state = transition[1]
+            #if overall_time < 1200:    
+            times.append(overall_time)
+        return times
 
     def reduce_node(self, state):
         if ((state == 'start') or (state == 'end')):
@@ -43,7 +88,7 @@ class SemiMarkovDiscrete:
             # Calsulate self-loop time
             init_self_loop_time = [1.0]
             #for transition in self_loops:
-            self_loop_time = self.calculate_self_loop_time(state, threshold)
+            self_loop_time = self.calculate_self_loop_time(state, 0.1)
             if len(self_loop_time) == 1:
                 self_loop_time = init_self_loop_time
             #print("SELF_LOOP")
@@ -65,7 +110,7 @@ class SemiMarkovDiscrete:
                     m2 = self.get_time(state, out_state)
                     #print("Sizes:")
                     #print(len(m1))
-                    #print(len(self_loop_time))
+                    #printf(len(self_loop_time))
                     #print(len(m2))
                     new_time = np.convolve(m1, self_loop_time, "full")
                     new_time = np.convolve(new_time, m2, "full")

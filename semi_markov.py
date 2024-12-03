@@ -2,9 +2,12 @@
 @author: akalenkova (anna.kalenkova@adelaide.edu.au)
 """
 
+import numpy as np
+
 from mult_gauss import MultiGauss
 from gauss import Gauss
 from convolution import mult_gauss_convolution, mult_gauss_sum
+
 
 self_loop_threshold = 0.1
 
@@ -32,7 +35,51 @@ class SemiMarkov:
         # Each transition is a tuple: (from, to, probability, multi Gauss)
         self.transitions = transitions 
 
+    def start_state(self):
+        for state in self.states:
+            if state == 'start':
+                return state
     
+    def end_state(self):
+        for state in self.states:
+            if state == 'end':
+                return state
+    
+
+    def draw_transition(self, state):
+        transitions = self.get_out_transitions_with_loop(state)
+        prob = []
+        trans = []
+
+        for transition in transitions:
+            prob.append(transition[2])
+            trans.append(transition)
+        print(prob)
+        index = np.random.choice(len(trans), 1, p=prob)
+        transition = trans[index[0]]
+        return transition
+
+    def draw_time(self, transition):
+        multi_gauss = transition[3]
+        gauss = np.random.choice(multi_gauss.gaussians, 1, p=multi_gauss.probabilities)
+        time = np.random.normal(loc=gauss[0].mean, scale=gauss[0].deviation)
+        return time
+
+
+    def simulate(self):
+        times = set()
+        iterations = 1
+        for i in range(iterations):
+            time = 0
+            state = self.start_state()
+            end = self.end_state() 
+            while state != end:
+                transition = self.draw_transition(state)
+                time += self.draw_time(transition)
+                state = transition[1]
+                print(state)
+            times.add(time)
+        return times
 
     def reduce_node(self, state):
         if ((state == 'start') or (state == 'end')):

@@ -102,7 +102,7 @@ for k in [1,2]:
     log_for_discovery = deepcopy(log)
     times_dictionary = {}
     log_processed = log_parser.prepare_log(log_for_discovery, k)
-    print(log_processed)
+    #print(log_processed)
     dfg, start_activities, end_activities = discover_dfg(log_processed)
     dfg["end", "start"] = 1
 
@@ -170,7 +170,10 @@ for k in [1,2]:
     else:
         fitting_times[k].add(end-start)
 
-    semi_markov = build_semi_markov(dfg, mult_gausses)
+    semi_markov = build_semi_markov(dfg, mult_gausses)]
+    
+
+
     print("Number of states: " + str(len(semi_markov.states)))
     print("Number of transitions: " + str(len(semi_markov.transitions)))
     state_degrees = semi_markov.state_degrees()
@@ -179,6 +182,10 @@ for k in [1,2]:
     max_state_degree = np.max(state_degrees)
     print("Max state degree: " + str(max_state_degree))
 
+
+    print("Simulation...")
+    times = semi_markov.simulate()
+    print(times)
 
     states = deepcopy(semi_markov.states)
     

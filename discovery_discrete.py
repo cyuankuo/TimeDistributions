@@ -152,7 +152,7 @@ for times in event_log_times:
         filtered_event_log_times.append(times)
 
 
-for k in [1,2]:
+for k in [5]:
  
     print()
     print("Order: k=" + str(k))
@@ -219,6 +219,29 @@ for k in [1,2]:
     print("Number of transitions: " + str(len(semi_markov.transitions)))
     states = deepcopy(semi_markov.states)
     
+    print("Simulation...")
+    sim_times = semi_markov.simulate(times_dictionary)
+
+    #y_sim, x_sim, _ = plt.hist(sim_times, bins=int(max(sim_times)), fc="tab:red", density=True, label='Simulation')
+    #discrete_kl_divergence_simulation = stat_utils.discrete_kl_divergence(y_sim, event_log_times, 20)
+    #print("KL Divergence Simulation:")
+    #print(discrete_kl_divergence_simulation) 
+                 
+
+    
+    y, x, _ = plt.hist(filtered_event_log_times, bins=500, fc="orange", density=True, label='Event log')
+    y_sim, x_sim, _ = plt.hist(sim_times, bins=int(max(sim_times)), fc="tab:red", density=True, label='Simulation')
+
+
+
+    plt.xlim([-10, 1000])
+    plt.legend(loc="upper right")
+    plt.title('')
+    plt.xlabel('Overall time in hours')
+    plt.ylabel('Probability')
+    plt.show()
+
+
     start = time.time()
     while len(semi_markov.states) > 2:
         #print("Selecting node...")
@@ -226,22 +249,27 @@ for k in [1,2]:
         #print(next_state)
         semi_markov.reduce_node(next_state)
         #print("Reduced")
-    end = time.time()   
+    end = time.time()     
     print()
     print("Reduction time:")
     print(end-start)
     if k not in reduction_times:
-        reduction_times[k] = {end-start}
+        reduction_times[k] = {end-start}      
     else:
         reduction_times[k].add(end-start)
 
     for transition in semi_markov.transitions:
         if transition[0] == 'start':
             times = semi_markov.transition_times[(transition[0], transition[1])]
-            #print(times[:400])
-            discrete_kl_divergence = stat_utils.discrete_kl_divergence(times[:1200], event_log_times, 20)
+            print(len(times))
+            #print(times)
+            #print(y_sim)
+            discrete_kl_divergence = stat_utils.discrete_kl_divergence(times, event_log_times, 20)
+            discrete_kl_divergence_simulation = stat_utils.discrete_kl_divergence(y_sim, event_log_times, 20)
             print("KL Divergence:")
-            print(discrete_kl_divergence)
+            print(discrete_kl_divergence) 
+            print("KL Divergence Simulation:")
+            print(discrete_kl_divergence_simulation) 
             if k not in kl_divergences:
                 kl_divergences[k] = {discrete_kl_divergence}
             else:
@@ -249,7 +277,7 @@ for k in [1,2]:
             print()
             plt.plot(times, label="Discrete Semi-Markov Model order="+str(k))
 
-for k in [1,2]:
+for k in [2]:
     print()
     print("Metrics for order " + str(k) + ":")
     print()
